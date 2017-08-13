@@ -1,3 +1,4 @@
+import os
 from os.path import join
 import multiprocessing
 
@@ -51,7 +52,7 @@ def make_base_name(params: HyperParameters):
 
 
 def run_single(dataset: DataSet, params: HyperParameters) -> None:
-    dir_name = './word2vec/results'
+    dir_name = "./word2vec/results"
     base_name = make_base_name(params)
 
     for model, epoch in train(dataset, params):
@@ -61,6 +62,9 @@ def run_single(dataset: DataSet, params: HyperParameters) -> None:
 def run_parallel() -> None:
     dataset = DataSet("./word2vec/ptb.train.txt")
     params_list = []
+
+    # make a directory to save results.
+    os.makedirs("./word2vec/results", exist_ok=True)
 
     for model_class in [SingleMatrixWord2Vec, DoubleMatrixWord2Vec]:
         for vector_dimension in [50, 100, 200]:
@@ -76,4 +80,7 @@ def run_parallel() -> None:
                 ))
 
     with multiprocessing.Pool(processes=6) as pool:
-        pool.map(lambda params: run_single(dataset, params), params_list)
+        for params in params_list:
+            pool.apply_async(run_single, args=(dataset, params))
+        pool.close()
+        pool.join()
