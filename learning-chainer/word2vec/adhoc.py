@@ -29,6 +29,27 @@ class Search:
         return self._vectors[id]
 
 
+def make_base_name(params: HyperParameters):
+    name = "word2vec"
+
+    # Add model name
+    name += "_" + params.model_class.__name__.replace("Word2Vec", "").lower()
+
+    # Add vector_dimension
+    name += "_vd{}".format(params.vector_dimension)
+
+    # Add window_size
+    name += "_w{}".format(params.window_size)
+
+    # Add n_negative_samples
+    name += "_ns{}".format(params.n_negative_samples)
+
+    # Add batch_size
+    name += "_bs{}".format(params.batch_size)
+
+    return name
+
+
 def run(seed: int = 12345) -> None:
     np.random.seed(seed)
 
@@ -44,7 +65,7 @@ def run(seed: int = 12345) -> None:
     )
 
     dir_name = './word2vec/results'
-    base_name = 'word2vec_{:%Y%m%d_%H%M%S}'.format(datetime.utcnow())
+    base_name = make_base_name(params)
 
     for model, epoch in train(dataset, params):
         save_model(join(dir_name, base_name + "_epoch{}.npz".format(epoch)), model, params)
