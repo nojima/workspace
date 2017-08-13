@@ -1,11 +1,11 @@
-from datetime import datetime
 from os.path import join
+import multiprocessing
 
 import numpy as np
 from scipy.spatial.distance import cosine
 
 from word2vec.dataset import DataSet, Vocabulary
-from word2vec.models import DoubleMatrixWord2Vec
+from word2vec.models import SingleMatrixWord2Vec, DoubleMatrixWord2Vec
 from word2vec.train import train, save_model, HyperParameters
 
 
@@ -50,22 +50,30 @@ def make_base_name(params: HyperParameters):
     return name
 
 
-def run(seed: int = 12345) -> None:
-    np.random.seed(seed)
-
-    dataset = DataSet("./word2vec/ptb.train.txt")
-    params = HyperParameters(
-        model_class=DoubleMatrixWord2Vec,
-        vocabulary_size=dataset.vocabulary.size,
-        vector_dimension=100,
-        window_size=5,
-        n_negative_samples=5,
-        batch_size=100,
-        n_epoch=30,
-    )
-
+def run_single(dataset: DataSet, params: HyperParameters) -> None:
     dir_name = './word2vec/results'
     base_name = make_base_name(params)
 
     for model, epoch in train(dataset, params):
         save_model(join(dir_name, base_name + "_epoch{}.npz".format(epoch)), model, params)
+
+
+def run_parallel() -> None:
+    dataset = DataSet("./word2vec/ptb.train.txt")
+    params_list = []
+
+    for model_class in [SingleMatrixWord2Vec, DoubleMatrixWord2Vec]:
+        for vector_dimension in [50, 100, 200]:
+            for window_size in [3, 5]:
+                params_list.append(HyperParameters(
+                    model_class=model_class,
+                    vocabulary_size=dataset.vocabulary.size,
+                    vector_dimension=vector_dimension,
+                    window_size=window_size,
+                    n_negative_samples=5,
+                    batch_size=100,
+                    n_epoch=30,
+                ))
+
+    with multiprocessing.Pool(processes=6) as pool:
+        pool.map(lambda params: run_single(dataset, params), params_list)
