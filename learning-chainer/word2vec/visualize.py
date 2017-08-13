@@ -4,10 +4,10 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
 from word2vec.dataset import Vocabulary
-from word2vec.models import DoubleMatrixWord2Vec
+from word2vec.models import Word2Vec
 
 
-def project_to_2d_by_tsne(vocabulary: Vocabulary, model: DoubleMatrixWord2Vec, perplexity: int = 25):
+def project_to_2d_by_tsne(vocabulary: Vocabulary, model: Word2Vec, perplexity: int = 25):
     word_ids = np.arange(0, vocabulary.size, dtype=np.int32)
     vectors = model.distributed_representation(word_ids)
 
@@ -15,7 +15,7 @@ def project_to_2d_by_tsne(vocabulary: Vocabulary, model: DoubleMatrixWord2Vec, p
     return tsne.fit_transform(vectors)
 
 
-def project_to_2d_by_pca(vocabulary: Vocabulary, model: DoubleMatrixWord2Vec):
+def project_to_2d_by_pca(vocabulary: Vocabulary, model: Word2Vec):
     word_ids = np.arange(0, vocabulary.size, dtype=np.int32)
     vectors = model.distributed_representation(word_ids)
 

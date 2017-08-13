@@ -1,9 +1,12 @@
+from datetime import datetime
+from os.path import join
+
 import numpy as np
 from scipy.spatial.distance import cosine
 
 from word2vec.dataset import DataSet, Vocabulary
-from word2vec.models import save_model, DoubleMatrixWord2Vec
-from word2vec.train import train
+from word2vec.models import DoubleMatrixWord2Vec
+from word2vec.train import train, save_model, HyperParameters
 
 
 class Search:
@@ -29,6 +32,19 @@ class Search:
 def run(seed: int = 12345) -> None:
     np.random.seed(seed)
 
-    dataset = DataSet("ptb.train.txt")
-    for model, epoch in train(dataset, n_epoch=50):
-        save_model("./models/v3", model, epoch)
+    dataset = DataSet("./word2vec/ptb.train.txt")
+    params = HyperParameters(
+        model_class=DoubleMatrixWord2Vec,
+        vocabulary_size=dataset.vocabulary.size,
+        vector_dimension=100,
+        window_size=5,
+        n_negative_samples=5,
+        batch_size=100,
+        n_epoch=30,
+    )
+
+    dir_name = './word2vec/results'
+    base_name = 'word2vec_{:%Y%m%d_%H%M%S}'.format(datetime.utcnow())
+
+    for model, epoch in train(dataset, params):
+        save_model(join(dir_name, base_name + "_epoch{}.npz".format(epoch)), model, params)
