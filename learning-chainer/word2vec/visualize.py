@@ -23,24 +23,36 @@ def project_to_2d_by_pca(vocabulary: Vocabulary, model: Word2Vec):
     return pca.fit_transform(vectors)
 
 
-def visualize(vocabulary: Vocabulary, vectors_2d: np.ndarray, ax: plt.Axes = None):
+def visualize(vocabulary: Vocabulary, model: Word2Vec, ax: plt.Axes = None):
     countries = ['u.s.', 'u.k.', 'italy', 'korea', 'china', 'germany', 'japan', 'france', 'russia', 'egypt']
     capitals = ['washington', 'london', 'rome', 'seoul', 'beijing', 'berlin', 'tokyo', 'paris', 'moscow', 'cairo']
-    mask = [vocabulary.to_id(word) for word in countries + capitals]
+
+    vectors_2d = project_to_2d_by_pca(vocabulary, model)
 
     if ax is None:
         fig, ax = plt.subplots()
     else:
         fig = None
 
-    target_vectors = vectors_2d[mask]
-    ax.scatter(target_vectors[:, 0], target_vectors[:, 1])
-    for i, label in enumerate(countries + capitals):
-        ax.annotate(label, (target_vectors[i, 0], target_vectors[i, 1]))
+    # Plot countries
+    country_ids = [vocabulary.to_id(word) for word in countries]
+    country_vectors = vectors_2d[country_ids]
+    ax.scatter(country_vectors[:, 0], country_vectors[:, 1], c='blue', alpha=0.7)
+    for i, label in enumerate(countries):
+        ax.annotate(label, (country_vectors[i, 0], country_vectors[i, 1]))
+
+    # Plot capitals
+    capital_ids = [vocabulary.to_id(word) for word in capitals]
+    capital_vectors = vectors_2d[capital_ids]
+    ax.scatter(capital_vectors[:, 0], capital_vectors[:, 1], c='orange', alpha=0.7)
+    for i, label in enumerate(capitals):
+        ax.annotate(label, (capital_vectors[i, 0], capital_vectors[i, 1]))
+
+    # Draw arrows
     for country, capital in zip(countries, capitals):
         v1 = vectors_2d[vocabulary.to_id(country)]
         v2 = vectors_2d[vocabulary.to_id(capital)]
-        ax.arrow(v1[0], v1[1], (v2 - v1)[0], (v2 - v1)[1])
+        ax.arrow(v1[0], v1[1], (v2 - v1)[0], (v2 - v1)[1], alpha=0.5)
 
     if fig is not None:
         fig.show()
