@@ -128,7 +128,7 @@ def visualize_model_learning_process(vocabulary: Vocabulary) -> None:
     fig.show()
 
 
-def print_negative_log_likelihoods(vocabulary: Vocabulary) -> None:
+def print_loss(vocabulary: Vocabulary) -> None:
     test_set = DataSet("./word2vec/ptb.test.txt", vocabulary)
 
     filenames = glob("./word2vec/results/*.npz")
@@ -138,11 +138,11 @@ def print_negative_log_likelihoods(vocabulary: Vocabulary) -> None:
         print("{}: {}".format(basename(filename), nll))
 
 
-def visualize_negative_log_likelihoods() -> None:
+def visualize_loss() -> None:
     xs = {}
     ys = {}
 
-    with open("./word2vec/results/negative_log_likelihood.txt") as f:
+    with open("./word2vec/results/loss.txt") as f:
         for line in f:
             name, nll = line.strip().split(": ")
             nll = float(nll)

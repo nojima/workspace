@@ -1,9 +1,10 @@
+import chainer
+from chainer import Variable
 from chainer.utils import walker_alias
 
 import numpy as np
-from scipy.special import expit
 
-from word2vec import HyperParameters
+from word2vec.train import HyperParameters
 from word2vec.dataset import DataSet
 from word2vec.models import Word2Vec
 
@@ -14,18 +15,10 @@ def _make_sampler(dataset: DataSet) -> walker_alias.WalkerAlias:
     return walker_alias.WalkerAlias(counts)
 
 
-def _log_likelihood(model: Word2Vec, x1: np.ndarray, x2: np.ndarray, t: np.ndarray) -> float:
-    v1 = model.distributed_representation(x1)
-    v2 = model.distributed_representation(x2)
-
-    p = expit(np.sum(v1 * v2, axis=1))
-
-    # discard extreme values
-    mask = np.logical_and(0.0001 < p, p < 0.9999)
-    p = p[mask]
-    t = t[mask]
-
-    return np.sum(t * np.log(p) + (1 - t) * np.log(1 - p))
+def _calculate_loss(model: Word2Vec, x1: np.ndarray, x2: np.ndarray, t: np.ndarray) -> float:
+    with chainer.no_backprop_mode():
+        loss = model(Variable(x1), Variable(x2), Variable(t))
+        return np.sum(loss.data)
 
 
 def evaluate(model: Word2Vec, params: HyperParameters, test_set: DataSet) -> float:
@@ -60,6 +53,6 @@ def evaluate(model: Word2Vec, params: HyperParameters, test_set: DataSet) -> flo
     # concat positives and negatives
     x1 = np.concatenate((np.array(positive_x1, dtype=np.int32), np.array(negative_x1, dtype=np.int32)))
     x2 = np.concatenate((np.array(positive_x2, dtype=np.int32), negative_x2))
-    t = np.concatenate((np.ones(n_positives), np.zeros(n_negatives)))
+    t = np.concatenate((np.ones(n_positives, dtype=np.int32), np.zeros(n_negatives, dtype=np.int32)))
 
-    return -_log_likelihood(model, x1, x2, t)
+    return _calculate_loss(model, x1, x2, t)
