@@ -102,7 +102,7 @@ def visualize_models(vocabulary: Vocabulary) -> None:
             params.model_class.__name__.replace("Word2Vec", "").lower(),
             params.vector_dimension,
             params.window_size))
-        visualize(vocabulary, model, ax)
+        visualize(model, vocabulary, ax)
 
     fig.tight_layout()
     fig.show()
@@ -118,7 +118,7 @@ def visualize_model_learning_process(vocabulary: Vocabulary) -> None:
         model, params = load_model(filename_template.format(epoch))
 
         ax.set_title("epoch={}".format(epoch))
-        visualize(vocabulary, model, ax)
+        visualize(model, vocabulary, ax)
 
     fig.tight_layout()
 

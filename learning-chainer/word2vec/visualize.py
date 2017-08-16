@@ -7,7 +7,7 @@ from word2vec.dataset import Vocabulary
 from word2vec.models import Word2Vec
 
 
-def project_to_2d_by_tsne(vocabulary: Vocabulary, model: Word2Vec, perplexity: int = 25):
+def project_to_2d_by_tsne(model: Word2Vec, vocabulary: Vocabulary, perplexity: int = 25):
     word_ids = np.arange(0, vocabulary.size, dtype=np.int32)
     vectors = model.distributed_representation(word_ids)
 
@@ -15,7 +15,7 @@ def project_to_2d_by_tsne(vocabulary: Vocabulary, model: Word2Vec, perplexity: i
     return tsne.fit_transform(vectors)
 
 
-def project_to_2d_by_pca(vocabulary: Vocabulary, model: Word2Vec):
+def project_to_2d_by_pca(model: Word2Vec, vocabulary: Vocabulary):
     word_ids = np.arange(0, vocabulary.size, dtype=np.int32)
     vectors = model.distributed_representation(word_ids)
 
@@ -23,11 +23,11 @@ def project_to_2d_by_pca(vocabulary: Vocabulary, model: Word2Vec):
     return pca.fit_transform(vectors)
 
 
-def visualize(vocabulary: Vocabulary, model: Word2Vec, ax: plt.Axes = None):
+def visualize(model: Word2Vec, vocabulary: Vocabulary, ax: plt.Axes = None):
     countries = ['u.s.', 'u.k.', 'italy', 'korea', 'china', 'germany', 'japan', 'france', 'russia', 'egypt']
     capitals = ['washington', 'london', 'rome', 'seoul', 'beijing', 'berlin', 'tokyo', 'paris', 'moscow', 'cairo']
 
-    vectors_2d = project_to_2d_by_pca(vocabulary, model)
+    vectors_2d = project_to_2d_by_pca(model, vocabulary)
 
     if ax is None:
         fig, ax = plt.subplots()
