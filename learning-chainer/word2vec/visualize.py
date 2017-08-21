@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
-from word2vec.dataset import Vocabulary
+from word2vec.dataset import Vocabulary, DataSet
 from word2vec.models import Word2Vec
 
 
@@ -23,7 +23,7 @@ def project_to_2d_by_pca(model: Word2Vec, vocabulary: Vocabulary):
     return pca.fit_transform(vectors)
 
 
-def visualize(model: Word2Vec, vocabulary: Vocabulary, ax: plt.Axes = None):
+def visualize_countries(model: Word2Vec, vocabulary: Vocabulary, ax: plt.Axes = None):
     countries = ['u.s.', 'u.k.', 'italy', 'korea', 'china', 'germany', 'japan', 'france', 'russia', 'egypt']
     capitals = ['washington', 'london', 'rome', 'seoul', 'beijing', 'berlin', 'tokyo', 'paris', 'moscow', 'cairo']
 
@@ -55,4 +55,26 @@ def visualize(model: Word2Vec, vocabulary: Vocabulary, ax: plt.Axes = None):
         ax.arrow(v1[0], v1[1], (v2 - v1)[0], (v2 - v1)[1], alpha=0.5)
 
     if fig is not None:
+        fig.show()
+
+
+def visualize_frequent_words(vectors_2d: np.ndarray, dataset: DataSet, k: int, ax: plt.Axes = None) -> None:
+    word_ids, counts = np.unique(dataset.data, return_counts=True)
+
+    indices = np.argpartition(-counts, k)[:k]
+    frequent_word_ids = word_ids[indices]
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(13, 13))
+    else:
+        fig = None
+
+    vectors_2d = vectors_2d[frequent_word_ids]
+
+    ax.scatter(vectors_2d[:, 0], vectors_2d[:, 1], s=2, alpha=0.25)
+    for i, id in enumerate(frequent_word_ids):
+        ax.annotate(dataset.vocabulary.to_word(id), (vectors_2d[i, 0], vectors_2d[i, 1]))
+
+    if fig is not None:
+        fig.tight_layout()
         fig.show()

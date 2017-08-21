@@ -13,7 +13,7 @@ from word2vec.dataset import DataSet, Vocabulary
 from word2vec.evaluate import evaluate
 from word2vec.models import Word2Vec, SingleMatrixWord2Vec, DoubleMatrixWord2Vec
 from word2vec.train import train, save_model, load_model, HyperParameters
-from word2vec.visualize import visualize
+from word2vec.visualize import visualize_countries
 
 
 class Search:
@@ -102,14 +102,14 @@ def visualize_models(vocabulary: Vocabulary) -> None:
             params.model_class.__name__.replace("Word2Vec", "").lower(),
             params.vector_dimension,
             params.window_size))
-        visualize(model, vocabulary, ax)
+        visualize_countries(model, vocabulary, ax)
 
     fig.tight_layout()
     fig.show()
 
 
 def visualize_model_learning_process(vocabulary: Vocabulary) -> None:
-    filename_template = "./word2vec/results/word2vec_doublematrix_vd200_w5_ns5_bs100_epoch{}.npz"
+    filename_template = "./word2vec/results/word2vec_singlematrix_vd100_w5_ns5_bs100_epoch{}.npz"
 
     fig, axes = plt.subplots(4, 3, figsize=(13, 13))
 
@@ -118,11 +118,11 @@ def visualize_model_learning_process(vocabulary: Vocabulary) -> None:
         model, params = load_model(filename_template.format(epoch))
 
         ax.set_title("epoch={}".format(epoch))
-        visualize(model, vocabulary, ax)
+        visualize_countries(model, vocabulary, ax)
 
     fig.tight_layout()
 
-    fig.suptitle("word2vec doublematrix vd=200 w=5 ns=5 bs=100")
+    fig.suptitle("word2vec singlematrix vd=100 w=5 ns=5 bs=100")
     fig.subplots_adjust(top=0.93)
 
     fig.show()
@@ -162,6 +162,22 @@ def visualize_loss() -> None:
         for label in xs[w].keys():
             ax.plot(xs[w][label], ys[w][label], label=label)
             ax.legend()
+
+    fig.tight_layout()
+    fig.show()
+
+
+def visualize_models(vocabulary: Vocabulary) -> None:
+    fig, axes = plt.subplots(4, 3, figsize=(13, 13))
+
+    for filename, ax in zip(sorted(glob("./word2vec/results/*_epoch29.npz")), axes.flatten()):
+        model, params = load_model(filename)
+
+        ax.set_title("{} vd={} w={}".format(
+            params.model_class.__name__.replace("Word2Vec", "").lower(),
+            params.vector_dimension,
+            params.window_size))
+        visualize_countries(model, vocabulary, ax)
 
     fig.tight_layout()
     fig.show()
