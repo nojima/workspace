@@ -120,7 +120,8 @@ class EncoderDecoder(Chain):
                 in_size=hidden_dimension,
                 out_size=hidden_dimension,
                 dropout=0.1)
-            self._W = L.Linear(hidden_dimension, output_dimension)
+            # Embed の逆を行う行列を表す良い名前がほしい。
+            self._extract_output = L.Linear(hidden_dimension, output_dimension)
 
         self._hyper_params = (input_dimension, output_dimension, hidden_dimension)
 
@@ -140,11 +141,12 @@ class EncoderDecoder(Chain):
         embedded_ys = [self._embed_output(y) for y in ys_in]
 
         hidden_states, cell_states, _ = self._encoder(None, None, embedded_xs)
-        _, _, outputs = self._decoder(hidden_states, cell_states, embedded_ys)
+        _, _, embedded_outputs = self._decoder(hidden_states, cell_states, embedded_ys)
 
         loss = 0
-        for actual, expected in zip(outputs, ys_out):
-            loss += F.softmax_cross_entropy(self._W(actual), expected)
+        for embedded_output, y in zip(embedded_outputs, ys_out):
+            output = self._extract_output(embedded_output)
+            loss += F.softmax_cross_entropy(output, y)
         loss /= batch_size
 
         return loss
@@ -160,8 +162,9 @@ class EncoderDecoder(Chain):
             result = []
             for i in range(max_length):
                 embedded_y = self._embed_output(y)
-                hidden_states, cell_states, outputs = self._decoder(hidden_states, cell_states, [embedded_y])
-                output = self._W(outputs[0])
+                hidden_states, cell_states, embedded_outputs = \
+                    self._decoder(hidden_states, cell_states, [embedded_y])
+                output = self._extract_output(embedded_outputs[0])
                 wid = np.argmax(output.data)
                 if wid == EOS:
                     break
