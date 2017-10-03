@@ -2,7 +2,7 @@ import numpy as np
 from chainer import Chain, links as L, Variable, functions as F
 from chainer import optimizers, Variable, serializers
 import chainer
-from typing import List
+from typing import List, Tuple
 import pickle
 from logging import getLogger, StreamHandler, DEBUG
 
@@ -257,3 +257,28 @@ def run():
     training_set, test_set = dataset.split(0.8)
     for model, epoch in train(training_set, attention=True):
         save_model("./models/ed-at-s08-d512-epoch{}.npz".format(epoch), model)
+
+
+def split_dataset(dataset: DataSet, ratio: float = 0.8) -> Tuple[DataSet, DataSet]:
+    training_set, test_set = dataset.split(ratio)
+
+    # test_set から日本語文が training_set に含まれるものを取り除く
+    training_ja_sentences = set(tuple(s) for s in training_set.ja_sentences)
+    deduplicated_ja = []
+    deduplicated_en = []
+    for ja, en in zip(test_set.ja_sentences, test_set.en_sentences):
+        if tuple(ja) not in training_ja_sentences:
+            deduplicated_ja.append(ja)
+            deduplicated_en.append(en)
+
+    new_test_set = DataSet(deduplicated_ja, test_set.ja_vocabulary,
+                           deduplicated_en, test_set.en_vocabulary)
+    return training_set, new_test_set
+
+
+def translate_it(model: EncoderDecoder, dataset: DataSet, index: int):
+    jv = dataset.ja_vocabulary
+    ev = dataset.en_vocabulary
+    print("    JA:", " ".join(jv.to_word(i) for i in dataset.ja_sentences[index]))
+    print("    EN:", " ".join(ev.to_word(i) for i in dataset.en_sentences[index]))
+    print("Output:", " ".join(ev.to_word(i) for i in model.translate(dataset.ja_sentences[index])))
