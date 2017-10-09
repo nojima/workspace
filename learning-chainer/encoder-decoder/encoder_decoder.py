@@ -5,6 +5,7 @@ import chainer
 from typing import List, Tuple
 import pickle
 from logging import getLogger, StreamHandler, DEBUG
+import heapq
 
 
 logger = getLogger(__name__)
@@ -170,32 +171,79 @@ class EncoderDecoder(Chain):
         new_embedded_output = F.tanh(self._attention_layer(concatenated))
         return self._extract_output(new_embedded_output)
 
-    def translate(self, sentence: np.ndarray, max_length: int = 30):
+
+    def _translate_one_word(self, wid: int, hidden_states, cell_states, attentions):
+        y = np.array([wid], dtype=np.int32)
+        embedded_y = self._embed_output(y)
+        hidden_states, cell_states, embedded_outputs = \
+            self._decoder(hidden_states, cell_states, [embedded_y])
+
+        if self._use_attention:
+            output = self._calculate_attention_layer_output(embedded_outputs[0], attentions[0])
+        else:
+            output = self._extract_output(embedded_outputs[0])
+
+        output = F.softmax(output)
+
+        return output[0], hidden_states, cell_states
+
+    def translate(self, sentence: np.ndarray, v, max_length: int = 30) -> List[int]:
         with chainer.no_backprop_mode(), chainer.using_config('train', False):
             sentence = sentence[::-1]
 
             embedded_xs = self._embed_input(sentence)
             hidden_states, cell_states, attentions = self._encoder(None, None, [embedded_xs])
 
-            y = np.array([EOS], dtype=np.int32)
+            wid = EOS
             result = []
-            for i in range(max_length):
-                embedded_y = self._embed_output(y)
-                hidden_states, cell_states, embedded_outputs = \
-                    self._decoder(hidden_states, cell_states, [embedded_y])
 
-                if self._use_attention:
-                    output = self._calculate_attention_layer_output(embedded_outputs[0], attentions[0])
-                else:
-                    output = self._extract_output(embedded_outputs[0])
+            for i in range(max_length):
+                output, hidden_states, cell_states = \
+                    self._translate_one_word(wid, hidden_states, cell_states, attentions)
 
                 wid = np.argmax(output.data)
                 if wid == EOS:
                     break
                 result.append(wid)
-                y = np.array([wid], dtype=np.int32)
 
             return result
+
+    def translate_with_beam_search(self, sentence: np.ndarray, v, max_length: int = 30, beam_width=3) -> List[int]:
+        with chainer.no_backprop_mode(), chainer.using_config('train', False):
+            sentence = sentence[::-1]
+
+            embedded_xs = self._embed_input(sentence)
+            hidden_states, cell_states, attentions = self._encoder(None, None, [embedded_xs])
+
+            heaps = [[] for _ in range(max_length + 1)]
+            heaps[0].append((0, [EOS], hidden_states, cell_states))  # (score, translation, hidden_states, cell_states)
+
+            solution = []
+            solution_score = 1e8
+
+            for i in range(max_length):
+                heaps[i] = sorted(heaps[i], key=lambda t: t[0])[:beam_width]
+
+                for score, translation, i_hidden_states, i_cell_states in heaps[i]:
+                    wid = translation[-1]
+                    output, new_hidden_states, new_cell_states = \
+                        self._translate_one_word(wid, i_hidden_states, i_cell_states, attentions)
+
+                    for next_wid, p in enumerate(output.data):
+                        if p < 1e-6:
+                            continue
+                        next_score = score - np.log(p)
+                        next_translation = translation + [next_wid]
+                        next_item = (next_score, next_translation, new_hidden_states, new_cell_states)
+
+                        if next_wid == EOS:
+                            if next_score < solution_score:
+                                solution = translation[1:]  # [1:] drops first EOS
+                                solution_score = next_score
+                        else:
+                            heaps[i + 1].append(next_item)
+
+            return solution
 
 
 def train(dataset: DataSet, n_epoch: int = 20, attention: bool = False):
@@ -281,4 +329,12 @@ def translate_it(model: EncoderDecoder, dataset: DataSet, index: int):
     ev = dataset.en_vocabulary
     print("    JA:", " ".join(jv.to_word(i) for i in dataset.ja_sentences[index]))
     print("    EN:", " ".join(ev.to_word(i) for i in dataset.en_sentences[index]))
-    print("Output:", " ".join(ev.to_word(i) for i in model.translate(dataset.ja_sentences[index])))
+    print("Output:", " ".join(ev.to_word(i) for i in model.translate_with_beam_search(dataset.ja_sentences[index], ev)))
+
+
+def translate_it2(model: EncoderDecoder, dataset: DataSet, index: int):
+    jv = dataset.ja_vocabulary
+    ev = dataset.en_vocabulary
+    print("    JA:", " ".join(jv.to_word(i) for i in dataset.ja_sentences[index]))
+    print("    EN:", " ".join(ev.to_word(i) for i in dataset.en_sentences[index]))
+    print("Output:", " ".join(ev.to_word(i) for i in model.translate(dataset.ja_sentences[index], ev)))
