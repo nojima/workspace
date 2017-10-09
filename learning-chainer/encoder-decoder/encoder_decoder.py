@@ -5,7 +5,7 @@ import chainer
 from typing import List, Tuple
 import pickle
 from logging import getLogger, StreamHandler, DEBUG
-import heapq
+import multiprocessing
 
 
 logger = getLogger(__name__)
@@ -340,3 +340,42 @@ def translate_it2(model: EncoderDecoder, dataset: DataSet, index: int):
     print("    JA:", " ".join(jv.to_word(i) for i in dataset.ja_sentences[index]))
     print("    EN:", " ".join(ev.to_word(i) for i in dataset.en_sentences[index]))
     print("Output:", " ".join(ev.to_word(i) for i in model.translate(dataset.ja_sentences[index])))
+
+
+def translate_all(model: EncoderDecoder, dataset: DataSet, use_beam_search: bool):
+    result = []
+    for i in range(dataset.n_sentences):
+        if i % 100 == 0:
+            logger.info("Translating {}".format(i))
+        if use_beam_search:
+            output = model.translate_with_beam_search(dataset.ja_sentences[i])
+        else:
+            output = model.translate(dataset.ja_sentences[i])
+        result.append(output)
+    return result
+
+
+def run_single(model_prefix, test_set, epoch, use_beam_search):
+    logger.info("epoch {}, use_beam_search {}".format(epoch, use_beam_search))
+
+    model = load_model("./models/{}-epoch{}.npz".format(model_prefix, epoch))
+    result = translate_all(model, test_set, use_beam_search)
+
+    b = "-b3" if use_beam_search else ""
+    with open("./results/{}{}-epoch{}.pickle".format(model_prefix, b, epoch), "wb") as f:
+        pickle.dump(result, f)
+
+
+def run2():
+    dataset = DataSet.load("./corpus/tatoeba/jpen.pickle", Vocabulary(), Vocabulary())
+    _, test_set = dataset.split(0.8)
+
+    model_prefix = "ed-s08-d512"
+
+    with multiprocessing.Pool(processes=6) as pool:
+        for epoch in [19, 3, 7]:
+            for use_beam_search in [False, True]:
+                pool.apply_async(run_single, args=(model_prefix, test_set, epoch, use_beam_search))
+        pool.close()
+        pool.join()
+
