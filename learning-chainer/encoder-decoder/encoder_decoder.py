@@ -187,7 +187,7 @@ class EncoderDecoder(Chain):
 
         return output[0], hidden_states, cell_states
 
-    def translate(self, sentence: np.ndarray, v, max_length: int = 30) -> List[int]:
+    def translate(self, sentence: np.ndarray, max_length: int = 30) -> List[int]:
         with chainer.no_backprop_mode(), chainer.using_config('train', False):
             sentence = sentence[::-1]
 
@@ -208,7 +208,7 @@ class EncoderDecoder(Chain):
 
             return result
 
-    def translate_with_beam_search(self, sentence: np.ndarray, v, max_length: int = 30, beam_width=3) -> List[int]:
+    def translate_with_beam_search(self, sentence: np.ndarray, max_length: int = 30, beam_width=3) -> List[int]:
         with chainer.no_backprop_mode(), chainer.using_config('train', False):
             sentence = sentence[::-1]
 
@@ -331,7 +331,7 @@ def translate_it(model: EncoderDecoder, dataset: DataSet, index: int):
     ev = dataset.en_vocabulary
     print("    JA:", " ".join(jv.to_word(i) for i in dataset.ja_sentences[index]))
     print("    EN:", " ".join(ev.to_word(i) for i in dataset.en_sentences[index]))
-    print("Output:", " ".join(ev.to_word(i) for i in model.translate_with_beam_search(dataset.ja_sentences[index], ev)))
+    print("Output:", " ".join(ev.to_word(i) for i in model.translate_with_beam_search(dataset.ja_sentences[index])))
 
 
 def translate_it2(model: EncoderDecoder, dataset: DataSet, index: int):
@@ -339,4 +339,4 @@ def translate_it2(model: EncoderDecoder, dataset: DataSet, index: int):
     ev = dataset.en_vocabulary
     print("    JA:", " ".join(jv.to_word(i) for i in dataset.ja_sentences[index]))
     print("    EN:", " ".join(ev.to_word(i) for i in dataset.en_sentences[index]))
-    print("Output:", " ".join(ev.to_word(i) for i in model.translate(dataset.ja_sentences[index], ev)))
+    print("Output:", " ".join(ev.to_word(i) for i in model.translate(dataset.ja_sentences[index])))
