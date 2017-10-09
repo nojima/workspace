@@ -229,10 +229,12 @@ class EncoderDecoder(Chain):
                     output, new_hidden_states, new_cell_states = \
                         self._translate_one_word(wid, i_hidden_states, i_cell_states, attentions)
 
-                    for next_wid, p in enumerate(output.data):
-                        if p < 1e-6:
-                            continue
-                        next_score = score - np.log(p)
+                    for next_wid in np.argsort(output.data)[::-1]:
+                        if output.data[next_wid] < 1e-6:
+                            break
+                        next_score = score - np.log(output.data[next_wid])
+                        if next_score > solution_score:
+                            break
                         next_translation = translation + [next_wid]
                         next_item = (next_score, next_translation, new_hidden_states, new_cell_states)
 
