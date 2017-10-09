@@ -148,13 +148,13 @@ class EncoderDecoder(Chain):
         embedded_xs = [self._embed_input(x) for x in xs]
         embedded_ys = [self._embed_output(y) for y in ys_in]
 
-        hidden_states, cell_states, x_hiddens = self._encoder(None, None, embedded_xs)
+        hidden_states, cell_states, attentions = self._encoder(None, None, embedded_xs)
         _, _, embedded_outputs = self._decoder(hidden_states, cell_states, embedded_ys)
 
         loss = 0
-        for embedded_output, y, x_hidden in zip(embedded_outputs, ys_out, x_hiddens):
+        for embedded_output, y, attention in zip(embedded_outputs, ys_out, attentions):
             if self._attention:
-                output = self._calculate_attention_layer_output(embedded_output, x_hidden)
+                output = self._calculate_attention_layer_output(embedded_output, attention)
             else:
                 output = self._extract_output(embedded_output)
             loss += F.softmax_cross_entropy(output, y)
@@ -162,10 +162,10 @@ class EncoderDecoder(Chain):
 
         return loss
 
-    def _calculate_attention_layer_output(self, embedded_output: Variable, x_hidden: Variable):
-        inner_prod = F.matmul(embedded_output, x_hidden, transb=True)
+    def _calculate_attention_layer_output(self, embedded_output: Variable, attention: Variable) -> Variable:
+        inner_prod = F.matmul(embedded_output, attention, transb=True)
         weights = F.softmax(inner_prod)
-        contexts = F.matmul(weights, x_hidden)
+        contexts = F.matmul(weights, attention)
         concatenated = F.concat((contexts, embedded_output))
         new_embedded_output = F.tanh(self._attention_layer(concatenated))
         return self._extract_output(new_embedded_output)
@@ -175,7 +175,7 @@ class EncoderDecoder(Chain):
             sentence = sentence[::-1]
 
             embedded_xs = self._embed_input(sentence)
-            hidden_states, cell_states, x_hiddens = self._encoder(None, None, [embedded_xs])
+            hidden_states, cell_states, attentions = self._encoder(None, None, [embedded_xs])
 
             y = np.array([EOS], dtype=np.int32)
             result = []
@@ -185,7 +185,7 @@ class EncoderDecoder(Chain):
                     self._decoder(hidden_states, cell_states, [embedded_y])
 
                 if self._attention:
-                    output = self._calculate_attention_layer_output(embedded_outputs[0], x_hiddens[0])
+                    output = self._calculate_attention_layer_output(embedded_outputs[0], attentions[0])
                 else:
                     output = self._extract_output(embedded_outputs[0])
 
