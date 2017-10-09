@@ -125,7 +125,7 @@ class EncoderDecoder(Chain):
             # Embed の逆を行う行列を表す良い名前がほしい。
             self._extract_output = L.Linear(hidden_dimension, output_dimension)
 
-            self._attention = attention
+            self._use_attention = attention
             if attention:
                 self._attention_layer = L.Linear(2 * hidden_dimension, hidden_dimension)
             else:
@@ -153,7 +153,7 @@ class EncoderDecoder(Chain):
 
         loss = 0
         for embedded_output, y, attention in zip(embedded_outputs, ys_out, attentions):
-            if self._attention:
+            if self._use_attention:
                 output = self._calculate_attention_layer_output(embedded_output, attention)
             else:
                 output = self._extract_output(embedded_output)
@@ -184,7 +184,7 @@ class EncoderDecoder(Chain):
                 hidden_states, cell_states, embedded_outputs = \
                     self._decoder(hidden_states, cell_states, [embedded_y])
 
-                if self._attention:
+                if self._use_attention:
                     output = self._calculate_attention_layer_output(embedded_outputs[0], attentions[0])
                 else:
                     output = self._extract_output(embedded_outputs[0])
