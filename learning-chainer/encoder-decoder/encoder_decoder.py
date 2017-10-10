@@ -173,7 +173,6 @@ class EncoderDecoder(Chain):
         new_embedded_output = F.tanh(self._attention_layer(concatenated))
         return self._extract_output(new_embedded_output)
 
-
     def _translate_one_word(self, wid: int, hidden_states, cell_states, attentions):
         y = np.array([wid], dtype=np.int32)
         embedded_y = self._embed_output(y)
