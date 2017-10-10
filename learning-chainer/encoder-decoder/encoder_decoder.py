@@ -389,10 +389,13 @@ def n_gram(sentence, n):
     return result
 
 
-def calculate_bleu(reference, output):
+def calculate_bleu(reference, output, max_n=4):
+    if len(output) == 0:
+        return 0.0
+
     precision_score = 1.0
 
-    for n in range(1, 5):
+    for n in range(1, max_n + 1):
         reference_ngram = n_gram(reference, n)
 
         counts = collections.defaultdict(int)
@@ -413,19 +416,19 @@ def calculate_bleu(reference, output):
         else:
             precision_score *= 0.0
 
-    precision_score = np.power(precision_score, 0.25)
+    precision_score = np.power(precision_score, 1.0 / max_n)
     length_penalty = min(1.0, np.exp(1 - len(reference) / len(output)))
 
     return length_penalty * precision_score
 
 
-def calculate_average_bleu(references, outputs):
+def calculate_average_bleu(references, outputs, max_n=4):
     assert len(references) == len(outputs)
     result = 0.0
     for i, (reference, output) in enumerate(zip(references, outputs)):
         if i % 100 == 0:
             logger.info("Calculating {}...".format(i))
-        result += calculate_bleu(reference, output)
+        result += calculate_bleu(reference, output, max_n)
     return result / len(references)
 
 
@@ -442,7 +445,7 @@ def dedup_outputs(training_set, test_set, outputs) -> Tuple[DataSet, DataSet]:
     return new_outputs
 
 
-def run_bleu():
+def run_bleu(max_n: int = 4):
     dataset = DataSet.load("./corpus/tatoeba/jpen.pickle", Vocabulary(), Vocabulary())
 
     no_dedup_training_set, no_dedup_test_set = dataset.split(0.8)
@@ -453,7 +456,7 @@ def run_bleu():
         with open(filename, "rb") as f:
             outputs = pickle.load(f)
         new_outputs = dedup_outputs(no_dedup_training_set, no_dedup_test_set, outputs)
-        bleu = calculate_average_bleu(test_set.en_sentences, new_outputs)
+        bleu = calculate_average_bleu(test_set.en_sentences, new_outputs, max_n)
         r[filename] = bleu
 
     return r
