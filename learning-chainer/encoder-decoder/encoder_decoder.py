@@ -6,6 +6,8 @@ from typing import List, Tuple
 import pickle
 from logging import getLogger, StreamHandler, DEBUG
 import multiprocessing
+import collections
+import glob
 
 
 logger = getLogger(__name__)
@@ -379,3 +381,79 @@ def run2():
         pool.close()
         pool.join()
 
+
+def n_gram(sentence, n):
+    result = []
+    for i in range(len(sentence) - n + 1):
+        result.append(sentence[i:i+n])
+    return result
+
+
+def calculate_bleu(reference, output):
+    precision_score = 1.0
+
+    for n in range(1, 5):
+        reference_ngram = n_gram(reference, n)
+
+        counts = collections.defaultdict(int)
+        for words in reference_ngram:
+            counts[tuple(words)] += 1
+
+        ok = 0
+        total = 0
+        for output_ngram in n_gram(output, n):
+            t = tuple(output_ngram)
+            if t in counts and counts[t] > 0:
+                ok += 1
+                counts[t] -= 1
+            total += 1
+
+        if total > 0:
+            precision_score *= ok / total
+        else:
+            precision_score *= 0.0
+
+    precision_score = np.power(precision_score, 0.25)
+    length_penalty = min(1.0, np.exp(1 - len(reference) / len(output)))
+
+    return length_penalty * precision_score
+
+
+def calculate_average_bleu(references, outputs):
+    assert len(references) == len(outputs)
+    result = 0.0
+    for i, (reference, output) in enumerate(zip(references, outputs)):
+        if i % 100 == 0:
+            logger.info("Calculating {}...".format(i))
+        result += calculate_bleu(reference, output)
+    return result / len(references)
+
+
+# 間違えて dedup 前の test_set で translations を計算してしまったので、それの修正用
+def dedup_outputs(training_set, test_set, outputs) -> Tuple[DataSet, DataSet]:
+    # test_set から日本語文が training_set に含まれるものを取り除く
+    training_ja_sentences = set(tuple(s) for s in training_set.ja_sentences)
+
+    new_outputs = []
+    for ja, en, output in zip(test_set.ja_sentences, test_set.en_sentences, outputs):
+        if tuple(ja) not in training_ja_sentences:
+            new_outputs.append(output)
+
+    return new_outputs
+
+
+def run_bleu():
+    dataset = DataSet.load("./corpus/tatoeba/jpen.pickle", Vocabulary(), Vocabulary())
+
+    no_dedup_training_set, no_dedup_test_set = dataset.split(0.8)
+    training_set, test_set = split_dataset(dataset)
+
+    r = {}
+    for filename in glob.glob("./results/*.pickle"):
+        with open(filename, "rb") as f:
+            outputs = pickle.load(f)
+        new_outputs = dedup_outputs(no_dedup_training_set, no_dedup_test_set, outputs)
+        bleu = calculate_average_bleu(test_set.en_sentences, new_outputs)
+        r[filename] = bleu
+
+    return r
