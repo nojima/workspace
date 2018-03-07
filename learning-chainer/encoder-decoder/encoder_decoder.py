@@ -2,7 +2,7 @@ import numpy as np
 from chainer import Chain, links as L, Variable, functions as F
 from chainer import optimizers, Variable, serializers
 import chainer
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 import pickle
 from logging import getLogger, StreamHandler, DEBUG
 import multiprocessing
@@ -292,7 +292,16 @@ def save_model(filename: str, model: EncoderDecoder) -> None:
 
 def load_model(filename: str) -> EncoderDecoder:
     with np.load(filename) as f:
-        deserializer = serializers.NpzDeserializer(f)
+        d = dict(f.iteritems())
+
+        # 後方互換性のために _W を _extract_output に改名する
+        for k, v in list(d.items()):
+            old_prefix = "model/_W/"
+            new_prefix = "model/_extract_output/"
+            if k.startswith(old_prefix):
+                d[new_prefix + k[len(old_prefix):]] = v
+
+        deserializer = serializers.NpzDeserializer(d)
 
         pickled_params = deserializer("hyper_parameters", None)
         params = pickle.loads(pickled_params.tobytes())
@@ -343,6 +352,22 @@ def translate_it2(model: EncoderDecoder, dataset: DataSet, index: int):
     print("Output:", " ".join(ev.to_word(i) for i in model.translate(dataset.ja_sentences[index])))
 
 
+def translate_it3(models: Dict[str, EncoderDecoder], dataset: DataSet, index: int):
+    max_name_len = max(len(name) for name in models)
+
+    jv = dataset.ja_vocabulary
+    ev = dataset.en_vocabulary
+
+    print("{}:".format("JA".rjust(max_name_len)),
+          " ".join(jv.to_word(i) for i in dataset.ja_sentences[index]))
+    print("{}:".format("EN".rjust(max_name_len)),
+          " ".join(ev.to_word(i) for i in dataset.en_sentences[index]))
+
+    for name, model in models:
+        print("{}:".format(name.rjust(max_name_len)),
+              " ".join(ev.to_word(i) for i in model.translate(dataset.ja_sentences[index])))
+
+
 def translate_all(model: EncoderDecoder, dataset: DataSet, use_beam_search: bool):
     result = []
     for i in range(dataset.n_sentences):
@@ -354,6 +379,24 @@ def translate_all(model: EncoderDecoder, dataset: DataSet, use_beam_search: bool
             output = model.translate(dataset.ja_sentences[i])
         result.append(output)
     return result
+
+
+def show_translations(translations: Dict[str, List[List[int]]], dataset: DataSet, index: int):
+    max_name_len = max(len(name) for name in translations)
+
+    jv = dataset.ja_vocabulary
+    ev = dataset.en_vocabulary
+
+    print("{}: ----- :".format("JA".ljust(max_name_len)),
+          " ".join(jv.to_word(i) for i in dataset.ja_sentences[index]))
+    print("{}: ----- :".format("EN".ljust(max_name_len)),
+          " ".join(ev.to_word(i) for i in dataset.en_sentences[index]))
+
+    for name, outputs in translations.items():
+        bleu = calculate_bleu(dataset.en_sentences[index], outputs[index])
+        print("{}:".format(name.ljust(max_name_len)),
+              "{:.3f} :".format(bleu),
+              " ".join(ev.to_word(i) for i in outputs[index]))
 
 
 def run_single(model_prefix, test_set, epoch, use_beam_search):
