@@ -70,6 +70,7 @@ impl Matcher for AnyCharacterMatcher {
 }
 
 //-----------------------------------------------------------------------------
+// RepeatMatcher
 
 struct RepeatMatcher {
     inner: Box<Matcher>,
@@ -85,12 +86,60 @@ impl RepeatMatcher {
 
 impl Matcher for RepeatMatcher {
     fn match_<'a>(&'a self, s: &'a str) -> Positions<'a> {
-        box self.inner.match_(s).flat_map(move |n1|
+        box self.inner.match_(s).flat_map(|n1|
             if n1 == 0 {
                 Left(iter::once(0 as usize))
             } else {
                 Right(self.match_(&s[n1..]).map(|n2| n1 + n2))
             }
+        ).chain(iter::once(0 as usize))
+    }
+}
+
+//-----------------------------------------------------------------------------
+// ConcatenationMatcher
+
+struct ConcatenationMatcher {
+    head: Box<Matcher>,
+    tail: Box<Matcher>,
+}
+
+impl ConcatenationMatcher {
+    fn new(head: Box<Matcher>, tail: Box<Matcher>) -> ConcatenationMatcher {
+        ConcatenationMatcher{
+            head: head,
+            tail: tail,
+        }
+    }
+}
+
+impl Matcher for ConcatenationMatcher {
+    fn match_<'a>(&'a self, s: &'a str) -> Positions<'a> {
+        box self.head.match_(s).flat_map(|n1|
+            self.tail.match_(&s[n1..]).map(|n2| n1 + n2)
         )
+    }
+}
+
+//-----------------------------------------------------------------------------
+// AlternationMatcher
+
+struct AlternationMatcher {
+    left: Box<Matcher>,
+    right: Box<Matcher>,
+}
+
+impl AlternationMatcher {
+    fn new(left: Box<Matcher>, right: Box<Matcher>) -> AlternationMatcher {
+        AlternationMatcher{
+            left: left,
+            right: right,
+        }
+    }
+}
+
+impl Matcher for AlternationMatcher {
+    fn match_<'a>(&'a self, s: &'a str) -> Positions<'a> {
+        box self.left.match_(s).chain(self.right.match_(s))
     }
 }
