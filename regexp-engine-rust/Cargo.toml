@@ -1,5 +1,5 @@
 [package]
-name = "rust-tutorial"
+name = "regexp-engine-rust"
 version = "0.1.0"
 authors = ["Yusuke Nojima <nojima@ynojima.com>"]
 
