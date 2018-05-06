@@ -45,9 +45,12 @@ impl CharacterMatcher {
 
 impl Matcher for CharacterMatcher {
     fn match_<'a>(&'a self, s: &'a str) -> Positions<'a> {
-        let expected = self.ch;
-        box s.chars().take(1).filter_map(move |c|
-            if c == expected { Some(1) } else { None }
+        box s.chars().take(1).filter_map(|c|
+            if c == self.ch {
+                Some(c.len_utf8())
+            } else {
+                None
+            }
         )
     }
 }
@@ -65,7 +68,7 @@ impl AnyCharacterMatcher {
 
 impl Matcher for AnyCharacterMatcher {
     fn match_<'a>(&'a self, s: &'a str) -> Positions<'a> {
-        box s.chars().take(1).map(|_| 1)
+        box s.chars().take(1).map(|c| c.len_utf8())
     }
 }
 
@@ -88,11 +91,11 @@ impl Matcher for RepeatMatcher {
     fn match_<'a>(&'a self, s: &'a str) -> Positions<'a> {
         box self.inner.match_(s).flat_map(|n1|
             if n1 == 0 {
-                Left(iter::once(0 as usize))
+                Left(iter::once(0))
             } else {
                 Right(self.match_(&s[n1..]).map(|n2| n1 + n2))
             }
-        ).chain(iter::once(0 as usize))
+        ).chain(iter::once(0))
     }
 }
 
