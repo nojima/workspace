@@ -2,146 +2,42 @@
 
 extern crate either;
 
-use either::{Left, Right};
-use std::iter;
+mod parse_error;
+mod parser;
+mod matcher;
 
-type Positions<'a> = Box<Iterator<Item = usize> + 'a>;
-
-trait Matcher {
-    fn match_<'a>(&'a self, s: &'a str) -> Positions<'a>;
+fn regexp_match<'a>(pattern: &'a str, s: &'a str) -> Option<&'a str> {
+    let matcher = parser::compile(pattern).expect("invalid pattern");
+    let mut it = matcher.matches(s);
+    it.next().map(|n| &s[..n])
 }
 
-//-----------------------------------------------------------------------------
-// ZeroMatcher (matches to empty string)
+#[test]
+fn test_regexp() {
+    let cases = vec![
+        ("", "abc", Some("")),
+        ("", "", Some("")),
+        ("hello", "hello", Some("hello")),
+        ("hello", "world", None),
+        ("...", "Beer", Some("Bee")),
+        ("...", "He", None),
+        ("foo|bar", "barxxx", Some("bar")),
+        ("foo|bar", "buzzxxx", None),
+        ("a*", "aaaaa", Some("aaaaa")),
+        ("a*", "bbbbb", Some("")),
+        ("c(abc)*", "cabcabcd", Some("cabcabc")),
+        ("c(abc)*", "cabacaabcd", Some("c")),
+        ("(hello|world)*", "hellohelloworldhelloheywww", Some("hellohelloworldhello")),
+        (".*Foo.*Bar", "This is Foo and that is Bar.", Some("This is Foo and that is Bar")),
+        (".*Foo.*Bar", "This is Bar and that is Foo.", None),
+        ("(0|1|2|3|4|5|6|7|8|9)* yen", "972 yen.", Some("972 yen")),
+        ("(0|1|2|3|4|5|6|7|8|9)* yen", "972 dollers.", None),
+        ("c(a*b*)*d", "caaabbbbbbabaaabdaaaaa", Some("caaabbbbbbabaaabd")),
+        ("(a|b)(a|b)*|c", "cabab", Some("c")),
+        (r"\(foo\|bar\)\\\\", r"(foo|bar)\\", Some(r"(foo|bar)\\")),
+    ];
 
-struct ZeroMatcher;
-
-impl ZeroMatcher {
-    fn new() -> ZeroMatcher {
-        ZeroMatcher {}
-    }
-}
-
-impl Matcher for ZeroMatcher {
-    fn match_<'a>(&'a self, s: &'a str) -> Positions<'a> {
-        box iter::once(0)
-    }
-}
-
-//-----------------------------------------------------------------------------
-// CharacterMatcher (matches to specified single character)
-
-struct CharacterMatcher {
-    ch: char,
-}
-
-impl CharacterMatcher {
-    fn new(ch: char) -> CharacterMatcher {
-        CharacterMatcher { ch: ch }
-    }
-}
-
-impl Matcher for CharacterMatcher {
-    fn match_<'a>(&'a self, s: &'a str) -> Positions<'a> {
-        box s.chars().take(1).filter_map(|c| {
-            if c == self.ch {
-                Some(c.len_utf8())
-            } else {
-                None
-            }
-        })
-    }
-}
-
-//-----------------------------------------------------------------------------
-// AnyCharacterMatcher (macthes to any single character)
-
-struct AnyCharacterMatcher;
-
-impl AnyCharacterMatcher {
-    fn new() -> AnyCharacterMatcher {
-        AnyCharacterMatcher {}
-    }
-}
-
-impl Matcher for AnyCharacterMatcher {
-    fn match_<'a>(&'a self, s: &'a str) -> Positions<'a> {
-        box s.chars().take(1).map(|c| c.len_utf8())
-    }
-}
-
-//-----------------------------------------------------------------------------
-// RepeatMatcher
-
-struct RepeatMatcher {
-    inner: Box<Matcher>,
-}
-
-impl RepeatMatcher {
-    fn new(inner: Box<Matcher>) -> RepeatMatcher {
-        RepeatMatcher { inner: inner }
-    }
-}
-
-impl Matcher for RepeatMatcher {
-    fn match_<'a>(&'a self, s: &'a str) -> Positions<'a> {
-        box self.inner
-            .match_(s)
-            .flat_map(|n1| {
-                if n1 == 0 {
-                    Left(iter::once(0))
-                } else {
-                    Right(self.match_(&s[n1..]).map(|n2| n1 + n2))
-                }
-            })
-            .chain(iter::once(0))
-    }
-}
-
-//-----------------------------------------------------------------------------
-// ConcatenationMatcher
-
-struct ConcatenationMatcher {
-    head: Box<Matcher>,
-    tail: Box<Matcher>,
-}
-
-impl ConcatenationMatcher {
-    fn new(head: Box<Matcher>, tail: Box<Matcher>) -> ConcatenationMatcher {
-        ConcatenationMatcher {
-            head: head,
-            tail: tail,
-        }
-    }
-}
-
-impl Matcher for ConcatenationMatcher {
-    fn match_<'a>(&'a self, s: &'a str) -> Positions<'a> {
-        box self.head
-            .match_(s)
-            .flat_map(|n1| self.tail.match_(&s[n1..]).map(|n2| n1 + n2))
-    }
-}
-
-//-----------------------------------------------------------------------------
-// AlternationMatcher
-
-struct AlternationMatcher {
-    left: Box<Matcher>,
-    right: Box<Matcher>,
-}
-
-impl AlternationMatcher {
-    fn new(left: Box<Matcher>, right: Box<Matcher>) -> AlternationMatcher {
-        AlternationMatcher {
-            left: left,
-            right: right,
-        }
-    }
-}
-
-impl Matcher for AlternationMatcher {
-    fn match_<'a>(&'a self, s: &'a str) -> Positions<'a> {
-        box self.left.match_(s).chain(self.right.match_(s))
+    for (pattern, s, expected) in cases {
+        assert_eq!(expected, regexp_match(pattern, s));
     }
 }
