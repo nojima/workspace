@@ -7,8 +7,8 @@ struct StdinReader<'a> {
 }
 
 impl<'a> StdinReader<'a> {
-    pub fn new(reader: StdinLock<'a>) -> Self {
-        Self { reader: reader }
+    pub fn new(reader: StdinLock<'a>) -> StdinReader {
+        StdinReader { reader: reader }
     }
 
     pub fn read<T: FromStr>(&mut self) -> T {
@@ -35,10 +35,8 @@ fn main() {
     let stdin = std::io::stdin();
     let mut reader = StdinReader::new(stdin.lock());
 
-    let a: i32 = reader.read();
-    let b: i32 = reader.read();
-    let c: i32 = reader.read();
-    let s: String = reader.read();
+    let a: i64 = reader.read();
+    let b: i64 = reader.read();
 
-    println!("{} {}", a + b + c, s);
+    println!("{}", if (a * b) % 2 == 0 { "Even" } else { "Odd" })
 }
