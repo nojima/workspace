@@ -1,0 +1,10 @@
+[package]
+name = "rust-protobuf-sample"
+version = "0.1.0"
+authors = ["Yusuke Nojima <nojima@ynojima.com>"]
+
+[dependencies]
+protobuf = "~2.0"
+
+[build-dependencies]
+protoc-rust = "2.0"
