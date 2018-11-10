@@ -1,49 +1,60 @@
 package controller
 
-import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.*
 import com.ynojima.kodeinsample.*
-import com.ynojima.kodeinsample.controller.GeneralErrorController
 import com.ynojima.kodeinsample.controller.GetUserController
 import com.ynojima.kodeinsample.controller.GetUserController.GetUserResponseBody
+import com.ynojima.kodeinsample.exception.UserNotFoundException
 import com.ynojima.kodeinsample.usecase.GetUserUseCase
-import io.javalin.Javalin
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 internal class GetUserControllerTest {
-    private fun setupTestApplication(): Javalin {
-        val app = Javalin.create().apply {
-            port(0)
-        }
-        GeneralErrorController().mount(app)
+    private val getUserUseCase = mock<GetUserUseCase>()
+    private val app = TestJavalin.create().also {
+        GetUserController(getUserUseCase).mount(it)
+    }
 
-        val alice = User(UserId(42), UserName("alice"), Password("open sesame"))
-        val getUserUseCase = mock<GetUserUseCase> {
-            on { getUser(alice.id) } doReturn alice
-        }
-
-        GetUserController(getUserUseCase).mount(app)
+    @BeforeEach
+    fun start() {
         app.start()
+    }
 
-        return app
+    @AfterEach
+    fun stop() {
+        app.stop()
     }
 
     @Test
-    @DisplayName("ユーザーを取得する")
+    @DisplayName("ユーザーを取得する (正常系)")
     fun getUser() {
         // Setup
-        val app = setupTestApplication()
-        val client = TestHttpClient(app.port())
+        val alice = User(UserId(42), UserName("alice"), Password("open sesame"))
+        whenever(getUserUseCase.getUser(alice.id)).doReturn(alice)
 
         // Exercise
-        val res = client.request("GET", "/users/42")
+        val res = TestHttpClient(app.port()).request("GET", "/users/42")
 
         // Verify
         val body = res.body!!.parse<GetUserResponseBody>()
         assertThat(body.userId).isEqualTo(42)
         assertThat(body.userName).isEqualTo("alice")
         assertThat(res.code).isEqualTo(200)
+    }
+
+    @Test
+    @DisplayName("UserNotFoundExceptionが発生すると404が返る")
+    fun getNonexistentUser() {
+        // Setup
+        whenever(getUserUseCase.getUser(any())).doThrow(UserNotFoundException("test"))
+
+        // Exercise
+        val res = TestHttpClient(app.port()).request("GET", "/users/42")
+
+        // Verify
+        assertThat(res.code).isEqualTo(404)
     }
 }
