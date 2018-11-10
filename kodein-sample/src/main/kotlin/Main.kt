@@ -1,9 +1,9 @@
 package com.ynojima.kodeinsample
 
 import com.ynojima.kodeinsample.repository.impl.InMemoryUserRepository
-import com.ynojima.kodeinsample.rest.GetUserController
-import com.ynojima.kodeinsample.rest.GeneralErrorController
-import com.ynojima.kodeinsample.rest.SignUpController
+import com.ynojima.kodeinsample.controller.GetUserController
+import com.ynojima.kodeinsample.controller.GeneralErrorController
+import com.ynojima.kodeinsample.controller.SignUpController
 import com.ynojima.kodeinsample.usecase.GetUserUseCase
 import com.ynojima.kodeinsample.usecase.SignUpUseCase
 import io.javalin.Javalin

@@ -1,4 +1,4 @@
-package com.ynojima.kodeinsample.rest
+package com.ynojima.kodeinsample.controller
 
 import com.ynojima.kodeinsample.Password
 import com.ynojima.kodeinsample.UserName
