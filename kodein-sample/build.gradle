@@ -21,14 +21,16 @@ dependencies {
     compile "org.slf4j:slf4j-simple:1.7.25"
     compile "com.fasterxml.jackson.core:jackson-databind:2.9.6"
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.4.1"
+    compile "com.squareup.okhttp3:okhttp:3.11.0"
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
-    testCompile("org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}")
-    testCompile("org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}")
-    testCompile("org.junit.jupiter:junit-jupiter-params:${junitJupiterVersion}")
-    testCompile("org.junit.platform:junit-platform-engine:${junitPlatformVersion}")
-    testCompile("org.junit.platform:junit-platform-launcher:${junitPlatformVersion}")
-    testCompile("org.assertj:assertj-core:3.11.1")
+    testCompile "org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}"
+    testCompile "org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}"
+    testCompile "org.junit.jupiter:junit-jupiter-params:${junitJupiterVersion}"
+    testCompile "org.junit.platform:junit-platform-engine:${junitPlatformVersion}"
+    testCompile "org.junit.platform:junit-platform-launcher:${junitPlatformVersion}"
+    testCompile "org.assertj:assertj-core:3.11.1"
+    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.0.0"
 }
 
 compileKotlin {
