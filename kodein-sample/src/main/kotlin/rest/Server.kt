@@ -4,6 +4,7 @@ import com.ynojima.kodeinsample.exception.NotFoundException
 import com.ynojima.kodeinsample.exception.ValidationException
 import io.javalin.Context
 import io.javalin.Javalin
+import io.javalin.apibuilder.ApiBuilder.*
 
 class Server(
     private val getUserController: GetUserController,
@@ -18,10 +19,20 @@ class Server(
         app.exception(ValidationException::class.java, this::invalidRequest)
         app.exception(Exception::class.java, this::internalServerError)
 
-        getUserController.register(app)
-        signUpController.register(app)
+        defineRoutes(app)
 
         app.start(listeningPort)
+    }
+
+    private fun defineRoutes(app: Javalin) {
+        app.routes {
+            path("/users") {
+                post(signUpController::signUp)
+            }
+            path("/users/:id") {
+                get(getUserController::getUser)
+            }
+        }
     }
 
     private fun notFound(e: NotFoundException, ctx: Context) {

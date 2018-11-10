@@ -3,15 +3,10 @@ package com.ynojima.kodeinsample.rest
 import com.ynojima.kodeinsample.UserId
 import com.ynojima.kodeinsample.usecase.GetUserUseCase
 import io.javalin.Context
-import io.javalin.Javalin
 
 class GetUserController(
     private val getUserUseCase: GetUserUseCase
 ) {
-    fun register(app: Javalin) {
-        app.get("/users/:id", this::getUser)
-    }
-
     data class GetUserResponseBody(
         val userId: Long,
         val userName: String
