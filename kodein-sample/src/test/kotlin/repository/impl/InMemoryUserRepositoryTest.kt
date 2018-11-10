@@ -56,7 +56,7 @@ internal class InMemoryUserRepositoryTest {
         }
 
         @Test
-        @DisplayName("存在しないユーザーを取得すると null が返る (getUserByName")
+        @DisplayName("存在しないユーザーを取得すると null が返る")
         fun getNonexistentUserByName() {
             // Exercise
             val user = sut.getUserByName(UserName("notfound"))

@@ -49,12 +49,22 @@ internal class GetUserControllerTest {
     @DisplayName("UserNotFoundExceptionが発生すると404が返る")
     fun getNonexistentUser() {
         // Setup
-        whenever(getUserUseCase.getUser(any())).doThrow(UserNotFoundException("test"))
+        whenever(getUserUseCase.getUser(any())).doThrow(UserNotFoundException("Boom!"))
 
         // Exercise
         val res = TestHttpClient(app.port()).request("GET", "/users/42")
 
         // Verify
         assertThat(res.code).isEqualTo(404)
+    }
+
+    @Test
+    @DisplayName("IDが不正な場合400が返る")
+    fun invalidId() {
+        // Exercise
+        val res = TestHttpClient(app.port()).request("GET", "/users/hello")
+
+        // Verify
+        assertThat(res.code).isEqualTo(400)
     }
 }

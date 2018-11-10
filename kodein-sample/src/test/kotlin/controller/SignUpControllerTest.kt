@@ -6,8 +6,6 @@ import com.ynojima.kodeinsample.controller.SignUpController
 import com.ynojima.kodeinsample.controller.SignUpController.SignUpRequestBody
 import com.ynojima.kodeinsample.controller.SignUpController.SignUpResponseBody
 import com.ynojima.kodeinsample.exception.DuplicatedUserNameException
-import com.ynojima.kodeinsample.exception.InvalidPasswordException
-import com.ynojima.kodeinsample.exception.InvalidUserNameException
 import com.ynojima.kodeinsample.usecase.SignUpUseCase
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -16,6 +14,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import java.lang.RuntimeException
 
 internal class SignUpControllerTest {
     private val signUpUseCase = mock<SignUpUseCase>()
@@ -34,7 +33,7 @@ internal class SignUpControllerTest {
     }
 
     @Test
-    @DisplayName("サインアップ 正常系")
+    @DisplayName("正常系")
     fun signUp() {
         // Setup
         val alice = User(UserId(42), UserName("alice"), Password("open sesame"))
@@ -51,24 +50,39 @@ internal class SignUpControllerTest {
         assertThat(res.code).isEqualTo(200)
     }
 
-    enum class ErrorCase(val expectedStatus: Int, val exception: Exception) {
+    enum class UseCaseErrorCase(val expectedStatus: Int, val exception: Exception) {
         DUPLICATED_USER(400, DuplicatedUserNameException("Boom!", UserName("alice"))),
-        INVALID_USER_NAME(400, InvalidUserNameException("Boom!", "invalid")),
-        INVALID_PASSWORD(400, InvalidPasswordException("Boom!"))
+        RUNTIME_ERROR(500, RuntimeException("Boom!")),
     }
 
     @ParameterizedTest
-    @EnumSource(ErrorCase::class)
-    @DisplayName("サインアップ 異常系")
-    fun signUpReturnsError(errorCase: ErrorCase) {
+    @EnumSource(UseCaseErrorCase::class)
+    @DisplayName("ユースケースが例外を投げるとき")
+    fun useCaseThrowsException(case: UseCaseErrorCase) {
         // Setup
-        whenever(signUpUseCase.signUp(any(), any())).doThrow(errorCase.exception)
+        whenever(signUpUseCase.signUp(any(), any())).doThrow(case.exception)
 
         // Exercise
         val req = SignUpRequestBody(userName = "alice", password = "open sesame")
         val res = TestHttpClient(app.port()).request("POST", "/users", req)
 
         // Verify
-        assertThat(res.code).isEqualTo(errorCase.expectedStatus)
+        assertThat(res.code).isEqualTo(case.expectedStatus)
+    }
+
+    enum class ValidationErrorCase(val expectedStatus: Int, val req: SignUpRequestBody) {
+        INVALID_USER_NAME(400, SignUpRequestBody(userName = "alice@", password = "open sesame")),
+        INVALID_PASSWORD(400, SignUpRequestBody(userName = "alice", password = "")),
+    }
+
+    @ParameterizedTest
+    @EnumSource(ValidationErrorCase::class)
+    @DisplayName("不正な入力が来たとき")
+    fun validationErrors(case: ValidationErrorCase) {
+        // Exercise
+        val res = TestHttpClient(app.port()).request("POST", "/users", case.req)
+
+        // Verify
+        assertThat(res.code).isEqualTo(case.expectedStatus)
     }
 }
