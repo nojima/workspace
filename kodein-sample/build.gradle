@@ -7,6 +7,7 @@ buildscript {
 
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.3.0'
+    id 'com.github.johnrengelman.shadow' version '4.0.2'
 }
 
 group = "com.ynojima.kodeinsample"
@@ -97,4 +98,10 @@ task fmt(type: JavaExec, group: "formatting") {
     classpath = configurations.ktlint
     main = "com.github.shyiko.ktlint.Main"
     args "-F", "src/**/*.kt"
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "com.ynojima.kodeinsample.MainKt"
+    }
 }
