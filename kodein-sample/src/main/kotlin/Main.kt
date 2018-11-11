@@ -4,11 +4,11 @@ import com.ynojima.kodeinsample.controller.GeneralErrorController
 import com.ynojima.kodeinsample.controller.GetUserController
 import com.ynojima.kodeinsample.controller.SignUpController
 import com.ynojima.kodeinsample.database.DatabaseOperator
+import com.ynojima.kodeinsample.database.MySqlDataSourceFactory
 import com.ynojima.kodeinsample.repository.Transactional
 import com.ynojima.kodeinsample.repository.impl.MySqlTransactional
 import com.ynojima.kodeinsample.usecase.GetUserUseCase
 import com.ynojima.kodeinsample.usecase.SignUpUseCase
-import com.zaxxer.hikari.HikariDataSource
 import io.javalin.Javalin
 import org.kodein.di.Kodein
 import org.kodein.di.generic.bind
@@ -20,7 +20,7 @@ import javax.sql.DataSource
 
 fun dependencies() = Kodein {
     bind<DataSource>() with singleton {
-        dataSource("localhost", 3306, "kodein_sample", "root", "")
+        MySqlDataSourceFactory.create("localhost", 3306, "kodein_sample", "root", "")
     }
 
     bind<Transactional>() with singleton { MySqlTransactional(instance()) }
@@ -44,16 +44,6 @@ fun dependencies() = Kodein {
         instance<GetUserController>().mount(app)
         app
     }
-}
-
-fun dataSource(host: String, port: Int, dbName: String, user: String, password: String): HikariDataSource {
-    val ds = HikariDataSource()
-    ds.driverClassName = "org.mariadb.jdbc.Driver"
-    ds.jdbcUrl = "jdbc:mysql://$host:$port/$dbName"
-    ds.addDataSourceProperty("user", user)
-    ds.addDataSourceProperty("password", password)
-    ds.isAutoCommit = false
-    return ds
 }
 
 fun main() {

@@ -43,7 +43,7 @@ class MySqlUserRepository(
     override fun getUserByName(name: UserName): User? {
         val query = queryOf(
             "SELECT `id`, `password` FROM `users` WHERE `name` = ?",
-            "name" to name.toString()
+            name.toString()
         ).map { row ->
             User(UserId(row.long(1)), name, Password(row.string(2)))
         }.asSingle

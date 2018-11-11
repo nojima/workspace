@@ -4,6 +4,7 @@ import com.ynojima.kodeinsample.Password
 import com.ynojima.kodeinsample.UserId
 import com.ynojima.kodeinsample.UserName
 import com.ynojima.kodeinsample.exception.DuplicatedUserNameException
+import com.ynojima.kodeinsample.repository.impl.InMemoryTransactional
 import com.ynojima.kodeinsample.repository.impl.InMemoryUserRepository
 import com.ynojima.kodeinsample.usecase.SignUpUseCase
 import org.assertj.core.api.Assertions.assertThat
@@ -12,8 +13,8 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 internal class SignUpUseCaseTest {
-    private val userRepository = InMemoryUserRepository()
-    private val sut = SignUpUseCase(userRepository)
+    private val transactional = InMemoryTransactional()
+    private val sut = SignUpUseCase(transactional)
 
     @Test
     @DisplayName("サインアップ (通常系)")

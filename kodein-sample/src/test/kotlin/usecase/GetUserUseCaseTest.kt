@@ -4,7 +4,7 @@ import com.ynojima.kodeinsample.Password
 import com.ynojima.kodeinsample.UserId
 import com.ynojima.kodeinsample.UserName
 import com.ynojima.kodeinsample.exception.UserNotFoundException
-import com.ynojima.kodeinsample.repository.impl.InMemoryUserRepository
+import com.ynojima.kodeinsample.repository.impl.InMemoryTransactional
 import com.ynojima.kodeinsample.usecase.GetUserUseCase
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -12,14 +12,16 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
 internal class GetUserUseCaseTest {
-    private val userRepository = InMemoryUserRepository()
-    private val sut = GetUserUseCase(userRepository)
+    private val transactional = InMemoryTransactional()
+    private val sut = GetUserUseCase(transactional)
 
     @Test
     @DisplayName("ユーザーを取得できる")
     fun getUser() {
         // Setup
-        val alice = userRepository.createUser(UserName("alice"), Password("open sesame"))
+        val alice = transactional.execute { repo ->
+            repo.userRepository.createUser(UserName("alice"), Password("open sesame"))
+        }
 
         // Exercise
         val user = sut.getUser(alice.id)
