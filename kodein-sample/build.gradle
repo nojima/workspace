@@ -19,37 +19,37 @@ repositories {
 
 dependencies {
     // HTTP
-    compile "io.javalin:javalin:2.4.0"
-    compile "com.squareup.okhttp3:okhttp:3.11.0"
+    implementation "io.javalin:javalin:2.4.0"
+    implementation "com.squareup.okhttp3:okhttp:3.11.0"
 
     // Logging
-    compile "org.slf4j:slf4j-simple:1.7.25"
+    implementation "org.slf4j:slf4j-simple:1.7.25"
 
     // Serialization/Deserialization
-    compile "com.fasterxml.jackson.core:jackson-databind:2.9.6"
-    compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.4.1"
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.9.6"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.4.1"
 
     // Database
-    compile "org.mariadb.jdbc:mariadb-java-client:2.3.0"
-    compile "com.github.seratch:kotliquery:1.2.3"
-    compile "com.zaxxer:HikariCP:3.2.0"
-    compile "org.flywaydb:flyway-core:5.2.1"
+    implementation "org.mariadb.jdbc:mariadb-java-client:2.3.0"
+    implementation "com.github.seratch:kotliquery:1.2.3"
+    implementation "com.zaxxer:HikariCP:3.2.0"
+    implementation "org.flywaydb:flyway-core:5.2.1"
 
     // Dependency Injection
     implementation "org.kodein.di:kodein-di-generic-jvm:5.3.0"
 
     // Language
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
     // Test framework
-    testCompile "org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}"
-    testCompile "org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}"
-    testCompile "org.junit.jupiter:junit-jupiter-params:${junitJupiterVersion}"
-    testCompile "org.junit.platform:junit-platform-engine:${junitPlatformVersion}"
-    testCompile "org.junit.platform:junit-platform-launcher:${junitPlatformVersion}"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:${junitJupiterVersion}"
+    testImplementation "org.junit.platform:junit-platform-engine:${junitPlatformVersion}"
+    testImplementation "org.junit.platform:junit-platform-launcher:${junitPlatformVersion}"
 
     // Assertion
-    testCompile "org.assertj:assertj-core:3.11.1"
+    testImplementation "org.assertj:assertj-core:3.11.1"
 
     // Mock
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.0.0"
