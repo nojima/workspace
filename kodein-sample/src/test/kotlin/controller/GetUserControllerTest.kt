@@ -1,7 +1,16 @@
 package controller
 
-import com.nhaarman.mockitokotlin2.*
-import com.ynojima.kodeinsample.*
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.doThrow
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
+import com.ynojima.kodeinsample.Password
+import com.ynojima.kodeinsample.TestHttpClient
+import com.ynojima.kodeinsample.TestJavalin
+import com.ynojima.kodeinsample.User
+import com.ynojima.kodeinsample.UserId
+import com.ynojima.kodeinsample.UserName
 import com.ynojima.kodeinsample.controller.GetUserController
 import com.ynojima.kodeinsample.controller.GetUserController.GetUserResponseBody
 import com.ynojima.kodeinsample.exception.UserNotFoundException

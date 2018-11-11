@@ -10,7 +10,7 @@ import kotliquery.queryOf
 
 class MySqlUserRepository(
     val tx: TransactionalSession
-): UserRepository {
+) : UserRepository {
 
     override fun createUser(userName: UserName, password: Password): User {
         val insertQuery = queryOf(

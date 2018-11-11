@@ -15,10 +15,12 @@ class SignUpController(
 
     data class SignUpRequestBody(
         val userName: String,
-        val password: String)
+        val password: String
+    )
     data class SignUpResponseBody(
         val userId: Long,
-        val userName: String)
+        val userName: String
+    )
 
     private fun signUp(ctx: Context) {
         val req = ctx.bodyAsClass(SignUpRequestBody::class.java)

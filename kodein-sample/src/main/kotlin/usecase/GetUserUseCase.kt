@@ -4,7 +4,6 @@ import com.ynojima.kodeinsample.User
 import com.ynojima.kodeinsample.UserId
 import com.ynojima.kodeinsample.exception.UserNotFoundException
 import com.ynojima.kodeinsample.repository.Transactional
-import com.ynojima.kodeinsample.repository.UserRepository
 
 open class GetUserUseCase(private val transactional: Transactional) {
     open fun getUser(id: UserId): User {

@@ -5,7 +5,6 @@ import com.ynojima.kodeinsample.User
 import com.ynojima.kodeinsample.UserName
 import com.ynojima.kodeinsample.exception.DuplicatedUserNameException
 import com.ynojima.kodeinsample.repository.Transactional
-import com.ynojima.kodeinsample.repository.UserRepository
 
 open class SignUpUseCase(private val transactional: Transactional) {
     open fun signUp(userName: UserName, password: Password): User {

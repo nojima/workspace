@@ -5,7 +5,6 @@ import com.ynojima.kodeinsample.UserId
 import com.ynojima.kodeinsample.UserName
 import com.ynojima.kodeinsample.exception.DuplicatedUserNameException
 import com.ynojima.kodeinsample.repository.impl.InMemoryTransactional
-import com.ynojima.kodeinsample.repository.impl.InMemoryUserRepository
 import com.ynojima.kodeinsample.usecase.SignUpUseCase
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
