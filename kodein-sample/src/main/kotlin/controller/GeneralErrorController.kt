@@ -28,7 +28,7 @@ class GeneralErrorController {
         ctx.result(e.message ?: "Invalid request")
     }
 
-    private fun internalServerError(@Suppress("UNUSED_PARAMETER") e: Exception, ctx: Context) {
+    private fun internalServerError(e: Exception, ctx: Context) {
         log.error("Internal server error", e)
         ctx.status(500)
         ctx.result("Internal server error")
