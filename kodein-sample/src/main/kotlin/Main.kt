@@ -5,6 +5,7 @@ import com.ynojima.kodeinsample.controller.GetUserController
 import com.ynojima.kodeinsample.controller.SignUpController
 import com.ynojima.kodeinsample.repository.Transactional
 import com.ynojima.kodeinsample.repository.impl.InMemoryTransactional
+import com.ynojima.kodeinsample.repository.impl.MySqlTransactional
 import com.ynojima.kodeinsample.usecase.GetUserUseCase
 import com.ynojima.kodeinsample.usecase.SignUpUseCase
 import com.zaxxer.hikari.HikariDataSource
@@ -21,7 +22,7 @@ fun dependencies() = Kodein {
         dataSource("localhost", 3306, "kodein_sample", "root", "")
     }
 
-    bind<Transactional>() with singleton { InMemoryTransactional() }
+    bind<Transactional>() with singleton { MySqlTransactional(instance()) }
 
     bind<SignUpUseCase>() with singleton { SignUpUseCase(instance()) }
     bind<SignUpController>() with singleton { SignUpController(instance()) }

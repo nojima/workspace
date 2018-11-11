@@ -32,7 +32,7 @@ class MySqlUserRepository(
 
     override fun getUser(id: UserId): User? {
         val query = queryOf(
-            "SELECT `name`, `password` WHERE `id` = ?",
+            "SELECT `name`, `password` FROM `users` WHERE `id` = ?",
             id.toLong()
         ).map { row ->
             User(id, UserName(row.string(1)), Password(row.string(2)))
@@ -42,8 +42,8 @@ class MySqlUserRepository(
 
     override fun getUserByName(name: UserName): User? {
         val query = queryOf(
-            "SELECT `id`, `password` WHERE `name` = ?," +
-            name.toString()
+            "SELECT `id`, `password` FROM `users` WHERE `name` = ?",
+            "name" to name.toString()
         ).map { row ->
             User(UserId(row.long(1)), name, Password(row.string(2)))
         }.asSingle
