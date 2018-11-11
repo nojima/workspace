@@ -44,6 +44,7 @@ dependencies {
 
     // Language
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:1.3.0"
 
     // Test Framework
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}"
