@@ -33,6 +33,7 @@ dependencies {
     compile "org.mariadb.jdbc:mariadb-java-client:2.3.0"
     compile "com.github.seratch:kotliquery:1.2.3"
     compile "com.zaxxer:HikariCP:3.2.0"
+    compile "org.flywaydb:flyway-core:5.2.1"
 
     // Dependency Injection
     implementation "org.kodein.di:kodein-di-generic-jvm:5.3.0"

@@ -3,8 +3,8 @@ package com.ynojima.kodeinsample
 import com.ynojima.kodeinsample.controller.GeneralErrorController
 import com.ynojima.kodeinsample.controller.GetUserController
 import com.ynojima.kodeinsample.controller.SignUpController
+import com.ynojima.kodeinsample.database.DatabaseOperator
 import com.ynojima.kodeinsample.repository.Transactional
-import com.ynojima.kodeinsample.repository.impl.InMemoryTransactional
 import com.ynojima.kodeinsample.repository.impl.MySqlTransactional
 import com.ynojima.kodeinsample.usecase.GetUserUseCase
 import com.ynojima.kodeinsample.usecase.SignUpUseCase
@@ -15,6 +15,7 @@ import org.kodein.di.generic.bind
 import org.kodein.di.generic.instance
 import org.kodein.di.generic.singleton
 import org.kodein.di.generic.with
+import org.kodein.di.newInstance
 import javax.sql.DataSource
 
 fun dependencies() = Kodein {
@@ -57,6 +58,10 @@ fun dataSource(host: String, port: Int, dbName: String, user: String, password: 
 
 fun main() {
     val container = dependencies()
+
+    val operator by container.newInstance { DatabaseOperator(instance()) }
+    operator.migrate()
+
     val app by container.instance<Javalin>()
     app.start()
 }
