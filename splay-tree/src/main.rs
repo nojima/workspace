@@ -1,8 +1,8 @@
 extern crate rand;
 mod splay_tree;
 
-use rand::prelude::*;
 use self::splay_tree::*;
+use rand::prelude::*;
 
 fn main() {
     let mut tree = SplayTree::new();

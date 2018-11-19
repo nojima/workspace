@@ -1,6 +1,6 @@
-use std::mem;
 use std::cmp::Ordering;
 use std::fmt;
+use std::mem;
 
 struct BinaryNode<K: Ord> {
     key: K,
@@ -24,9 +24,7 @@ pub struct SplayTree<K: Ord> {
 
 impl<K: Ord> SplayTree<K> {
     pub fn new() -> Self {
-        Self {
-            root: Option::None,
-        }
+        Self { root: Option::None }
     }
 
     pub fn insert(&mut self, key: K) -> bool {
@@ -47,7 +45,7 @@ impl<K: Ord> SplayTree<K> {
             Ordering::Less => {
                 // splay 操作で得た木を根の左側で split し、
                 // 新たに作るノードの左右にぶら下げる。
-                self.root = Some(Box::new(BinaryNode{
+                self.root = Some(Box::new(BinaryNode {
                     key,
                     left: mem::replace(&mut root.left, None),
                     right: Some(root),
@@ -57,7 +55,7 @@ impl<K: Ord> SplayTree<K> {
             Ordering::Greater => {
                 // splay 操作で得た木を根の右側で split し、
                 // 新たに作るノードの左右にぶら下げる。
-                self.root = Some(Box::new(BinaryNode{
+                self.root = Some(Box::new(BinaryNode {
                     key,
                     right: mem::replace(&mut root.right, None),
                     left: Some(root),
@@ -98,7 +96,9 @@ fn pretty_print<K: Ord + fmt::Debug>(node: &Option<Box<BinaryNode<K>>>, indent: 
 // key が部分木に存在しない場合、最後にアクセスしたノードが根となる。
 // 部分木は破壊的に変更される。
 fn splay<K: Ord>(key: &K, root: Option<Box<BinaryNode<K>>>) -> Option<Box<BinaryNode<K>>> {
-    if root.is_none() { return None; }
+    if root.is_none() {
+        return None;
+    }
     let root = root.unwrap();
 
     let new_root = match key.cmp(&root.key) {
@@ -127,13 +127,15 @@ fn rotate_left<K: Ord>(mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
 
 // key が root の左側にあるときのスプレー操作を行う。新たな根を返す。
 fn splay_left<K: Ord>(key: &K, mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
-    if root.left.is_none() { return root }
+    if root.left.is_none() {
+        return root;
+    }
     let mut left = root.left.unwrap();
 
     if key < &left.key {
         // zig-zig
 
-        // left-left の部分木の根に key を持ってくる 
+        // left-left の部分木の根に key を持ってくる
         left.left = splay(key, left.left);
         root.left = Some(left);
 
@@ -166,13 +168,15 @@ fn splay_left<K: Ord>(key: &K, mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K
 
 // key が root の右側にあるときのスプレー操作を行う。新たな根を返す。
 fn splay_right<K: Ord>(key: &K, mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
-    if root.right.is_none() { return root }
+    if root.right.is_none() {
+        return root;
+    }
     let mut right = root.right.unwrap();
 
     if key > &right.key {
         // zig-zig
 
-        // right-right の部分木の根に key を持ってくる 
+        // right-right の部分木の根に key を持ってくる
         right.right = splay(key, right.right);
         root.right = Some(right);
 
