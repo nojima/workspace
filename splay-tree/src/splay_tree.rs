@@ -31,12 +31,12 @@ impl<K: Ord> SplayTree<K> {
 
     pub fn insert(&mut self, key: K) -> bool {
         let root = mem::replace(&mut self.root, None);
-        let root = splay(&key, root);
-        if root.is_none() {
+        let new_root = splay(&key, root);
+        if new_root.is_none() {
             self.root = Some(Box::new(BinaryNode::new(key)));
             return true;
         }
-        let mut root = root.unwrap();
+        let mut root = new_root.unwrap();
         match key.cmp(&root.key) {
             Ordering::Equal => {
                 // 既に同じキーを持つ要素が存在する。
@@ -101,28 +101,28 @@ fn splay<K: Ord>(key: &K, root: Option<Box<BinaryNode<K>>>) -> Option<Box<Binary
     if root.is_none() { return None; }
     let root = root.unwrap();
 
-    let new_node = match key.cmp(&root.key) {
+    let new_root = match key.cmp(&root.key) {
         Ordering::Less => splay_left(key, root),
         Ordering::Greater => splay_right(key, root),
         Ordering::Equal => root,
     };
-    Some(new_node)
+    Some(new_root)
 }
 
 // root の左側のノードが新たな根となるように木を回転させ、新たな根を返す。
 fn rotate_right<K: Ord>(mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
-    let mut x = root.left.unwrap();
-    root.left = x.right;
-    x.right = Some(root);
-    x
+    let mut new_root = root.left.unwrap();
+    root.left = new_root.right;
+    new_root.right = Some(root);
+    new_root
 }
 
 // root の右側のノードが新たな根となるように木を回転させ、新たな根を返す。
 fn rotate_left<K: Ord>(mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
-    let mut x = root.right.unwrap();
-    root.right = x.left;
-    x.left = Some(root);
-    x
+    let mut new_root = root.right.unwrap();
+    root.right = new_root.left;
+    new_root.left = Some(root);
+    new_root
 }
 
 // key が root の左側にあるときのスプレー操作を行う。新たな根を返す。
@@ -138,11 +138,11 @@ fn splay_left<K: Ord>(key: &K, mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K
         root.left = Some(left);
 
         // 右回転を２回行って left-left を根に持ってくる
-        let new_node = rotate_right(root);
-        if new_node.left.is_some() {
-            rotate_right(new_node)
+        let new_root = rotate_right(root);
+        if new_root.left.is_some() {
+            rotate_right(new_root)
         } else {
-            new_node
+            new_root
         }
     } else if key > &left.key {
         // zig-zag
@@ -177,11 +177,11 @@ fn splay_right<K: Ord>(key: &K, mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<
         root.right = Some(right);
 
         // 左回転を２回行って left-left を根に持ってくる
-        let new_node = rotate_left(root);
-        if new_node.right.is_some() {
-            rotate_left(new_node)
+        let new_root = rotate_left(root);
+        if new_root.right.is_some() {
+            rotate_left(new_root)
         } else {
-            new_node
+            new_root
         }
     } else if key < &right.key {
         // zig-zag
