@@ -68,11 +68,12 @@ impl<K: Ord> SplayTree<K> {
     }
 
     pub fn search(&mut self, key: K) -> bool {
+        // 検索対象の key を使って splay 操作をする。
+        // もし key が木に含まれていればそれが root になるので、root の key をチェックする。
         let root = mem::replace(&mut self.root, None);
         self.root = splay(&key, root);
         self.root.as_ref().map_or(false, |r| r.key == key)
     }
-
 }
 
 impl<K: Ord + fmt::Debug> SplayTree<K> {
