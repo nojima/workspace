@@ -69,14 +69,8 @@ impl<K: Ord> SplayTree<K> {
 
     pub fn search(&mut self, key: K) -> bool {
         let root = mem::replace(&mut self.root, None);
-        match splay(&key, root) {
-            Some(root) => {
-                let ret = root.key == key;
-                self.root = Some(root);
-                ret
-            }
-            None => false,
-        }
+        self.root = splay(&key, root);
+        self.root.as_ref().map_or(false, |r| r.key == key)
     }
 
 }
