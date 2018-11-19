@@ -105,8 +105,8 @@ fn splay<K: Ord>(key: &K, root: Option<Box<BinaryNode<K>>>) -> Option<Box<Binary
     let node = root.unwrap();
 
     let new_node = match key.cmp(&node.key) {
-        Ordering::Less => zig_left(key, node),
-        Ordering::Greater => zig_right(key, node),
+        Ordering::Less => splay_left(key, node),
+        Ordering::Greater => splay_right(key, node),
         Ordering::Equal => node,
     };
     Some(new_node)
@@ -128,7 +128,8 @@ fn rotate_left<K: Ord>(mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
     x
 }
 
-fn zig_left<K: Ord>(key: &K, mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
+// key が root の左側にあるときのスプレー操作を行う。新たな根を返す。
+fn splay_left<K: Ord>(key: &K, mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
     if root.left.is_none() { return root }
     let mut left = root.left.unwrap();
 
@@ -166,7 +167,8 @@ fn zig_left<K: Ord>(key: &K, mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>>
     }
 }
 
-fn zig_right<K: Ord>(key: &K, mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
+// key が root の右側にあるときのスプレー操作を行う。新たな根を返す。
+fn splay_right<K: Ord>(key: &K, mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
     if root.right.is_none() { return root }
     let mut right = root.right.unwrap();
 
