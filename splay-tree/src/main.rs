@@ -7,16 +7,16 @@ use rand::prelude::*;
 
 struct BinaryNode<K: Ord> {
     key: K,
-    lhs: Option<Box<BinaryNode<K>>>,
-    rhs: Option<Box<BinaryNode<K>>>,
+    left: Option<Box<BinaryNode<K>>>,
+    right: Option<Box<BinaryNode<K>>>,
 }
 
 impl<K: Ord> BinaryNode<K> {
     fn new(key: K) -> Self {
         Self {
             key,
-            lhs: Option::None,
-            rhs: Option::None,
+            left: Option::None,
+            right: Option::None,
         }
     }
 }
@@ -49,16 +49,16 @@ impl<K: Ord> SplayTree<K> {
             Ordering::Less => {
                 self.root = Some(Box::new(BinaryNode{
                     key,
-                    lhs: mem::replace(&mut root.lhs, None),
-                    rhs: Some(root),
+                    left: mem::replace(&mut root.left, None),
+                    right: Some(root),
                 }));
                 true
             }
             Ordering::Greater => {
                 self.root = Some(Box::new(BinaryNode{
                     key,
-                    rhs: mem::replace(&mut root.rhs, None),
-                    lhs: Some(root),
+                    right: mem::replace(&mut root.right, None),
+                    left: Some(root),
                 }));
                 true
             }
@@ -88,9 +88,9 @@ impl<K: Ord + fmt::Debug> SplayTree<K> {
 fn pretty_print<K: Ord + fmt::Debug>(node: &Option<Box<BinaryNode<K>>>, indent: usize) {
     match node {
         Some(ref node) => {
-            pretty_print(&node.lhs, indent + 2);
+            pretty_print(&node.left, indent + 2);
             println!("{}{:?}", " ".repeat(indent * 2), node.key);
-            pretty_print(&node.rhs, indent + 2);
+            pretty_print(&node.right, indent + 2);
         }
         None => {}
     }
@@ -113,89 +113,89 @@ fn splay<K: Ord>(key: &K, node: Option<Box<BinaryNode<K>>>) -> Option<Box<Binary
 }
 
 fn rotate_right<K: Ord>(mut node: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
-    let mut x = node.lhs.unwrap();
-    node.lhs = x.rhs;
-    x.rhs = Option::Some(node);
+    let mut x = node.left.unwrap();
+    node.left = x.right;
+    x.right = Option::Some(node);
     x
 }
 
 fn rotate_left<K: Ord>(mut node: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
-    let mut x = node.rhs.unwrap();
-    node.rhs = x.lhs;
-    x.lhs = Option::Some(node);
+    let mut x = node.right.unwrap();
+    node.right = x.left;
+    x.left = Option::Some(node);
     x
 }
 
 fn zig_left<K: Ord>(key: &K, mut node: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
-    if node.lhs.is_none() { return node }
-    let mut lhs = node.lhs.unwrap();
+    if node.left.is_none() { return node }
+    let mut left = node.left.unwrap();
 
-    if key < &lhs.key {
+    if key < &left.key {
         // zig-zig
 
         // left-left の部分木の根に key を持ってくる 
-        lhs.lhs = splay(key, lhs.lhs);
-        node.lhs = Some(lhs);
+        left.left = splay(key, left.left);
+        node.left = Some(left);
 
         // 右回転を２回行って left-left を根に持ってくる
         let new_node = rotate_right(node);
-        if new_node.lhs.is_some() {
+        if new_node.left.is_some() {
             rotate_right(new_node)
         } else {
             new_node
         }
-    } else if key > &lhs.key {
+    } else if key > &left.key {
         // zig-zag
 
         // left-right の部分木の根に key を持ってくる
-        lhs.rhs = splay(key, lhs.rhs);
+        left.right = splay(key, left.right);
 
         // 左回転と右回転を行って left-right を根に持ってくる
-        node.lhs = if lhs.rhs.is_some() {
-            Some(rotate_left(lhs))
+        node.left = if left.right.is_some() {
+            Some(rotate_left(left))
         } else {
-            Some(lhs)
+            Some(left)
         };
         rotate_right(node)
     } else {
-        node.lhs = Some(lhs);
+        node.left = Some(left);
         rotate_right(node)
     }
 }
 
 fn zig_right<K: Ord>(key: &K, mut node: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
-    if node.rhs.is_none() { return node }
-    let mut rhs = node.rhs.unwrap();
+    if node.right.is_none() { return node }
+    let mut right = node.right.unwrap();
 
-    if key > &rhs.key {
+    if key > &right.key {
         // zig-zig
 
         // right-right の部分木の根に key を持ってくる 
-        rhs.rhs = splay(key, rhs.rhs);
-        node.rhs = Some(rhs);
+        right.right = splay(key, right.right);
+        node.right = Some(right);
 
         // 左回転を２回行って left-left を根に持ってくる
         let new_node = rotate_left(node);
-        if new_node.rhs.is_some() {
+        if new_node.right.is_some() {
             rotate_left(new_node)
         } else {
             new_node
         }
-    } else if key < &rhs.key {
+    } else if key < &right.key {
         // zig-zag
 
         // right-left の部分木の根に key を持ってくる
-        rhs.lhs = splay(key, rhs.lhs);
+        right.left = splay(key, right.left);
 
         // 右回転と左回転を行って right-left を根に持ってくる
-        node.rhs = if rhs.lhs.is_some() {
-            Some(rotate_right(rhs))
+        node.right = if right.left.is_some() {
+            Some(rotate_right(right))
         } else {
-            Some(rhs)
+            Some(right)
         };
         rotate_left(node)
     } else {
-        node.rhs = Some(rhs);
+        node.right = Some(right);
         rotate_left(node)
     }
 }
