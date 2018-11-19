@@ -99,12 +99,12 @@ fn pretty_print<K: Ord + fmt::Debug>(node: &Option<Box<BinaryNode<K>>>, indent: 
 // 部分木は破壊的に変更される。
 fn splay<K: Ord>(key: &K, root: Option<Box<BinaryNode<K>>>) -> Option<Box<BinaryNode<K>>> {
     if root.is_none() { return None; }
-    let node = root.unwrap();
+    let root = root.unwrap();
 
-    let new_node = match key.cmp(&node.key) {
-        Ordering::Less => splay_left(key, node),
-        Ordering::Greater => splay_right(key, node),
-        Ordering::Equal => node,
+    let new_node = match key.cmp(&root.key) {
+        Ordering::Less => splay_left(key, root),
+        Ordering::Greater => splay_right(key, root),
+        Ordering::Equal => root,
     };
     Some(new_node)
 }
@@ -113,7 +113,7 @@ fn splay<K: Ord>(key: &K, root: Option<Box<BinaryNode<K>>>) -> Option<Box<Binary
 fn rotate_right<K: Ord>(mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
     let mut x = root.left.unwrap();
     root.left = x.right;
-    x.right = Option::Some(root);
+    x.right = Some(root);
     x
 }
 
@@ -121,7 +121,7 @@ fn rotate_right<K: Ord>(mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
 fn rotate_left<K: Ord>(mut root: Box<BinaryNode<K>>) -> Box<BinaryNode<K>> {
     let mut x = root.right.unwrap();
     root.right = x.left;
-    x.left = Option::Some(root);
+    x.left = Some(root);
     x
 }
 
