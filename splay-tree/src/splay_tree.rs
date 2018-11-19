@@ -39,11 +39,14 @@ impl<K: Ord> SplayTree<K> {
         let mut root = root.unwrap();
         match key.cmp(&root.key) {
             Ordering::Equal => {
-                // 既に同じキーを持つ要素が存在する
+                // 既に同じキーを持つ要素が存在する。
+                // splay 操作で得た木をそのまま保存して false を返す。
                 self.root = Some(root);
                 false
             }
             Ordering::Less => {
+                // splay 操作で得た木を根の左側で split し、
+                // 新たに作るノードの左右にぶら下げる。
                 self.root = Some(Box::new(BinaryNode{
                     key,
                     left: mem::replace(&mut root.left, None),
@@ -52,6 +55,8 @@ impl<K: Ord> SplayTree<K> {
                 true
             }
             Ordering::Greater => {
+                // splay 操作で得た木を根の右側で split し、
+                // 新たに作るノードの左右にぶら下げる。
                 self.root = Some(Box::new(BinaryNode{
                     key,
                     right: mem::replace(&mut root.right, None),
