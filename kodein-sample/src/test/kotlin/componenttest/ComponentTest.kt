@@ -1,4 +1,4 @@
-package integrationtest
+package componenttest
 
 import TestDataSourceFactory
 import com.ynojima.kodeinsample.Application
@@ -20,7 +20,7 @@ import org.kodein.di.generic.with
 import org.kodein.di.newInstance
 import javax.sql.DataSource
 
-class IntegrationTest {
+class ComponentTest {
 
     private val diContainer = Kodein {
         extend(MainEnvironment.diContainer)
