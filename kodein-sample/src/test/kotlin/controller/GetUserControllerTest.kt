@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test
 internal class GetUserControllerTest {
     private val getUserUseCase = mock<GetUserUseCase>()
     private val app = TestJavalin.create().also {
-        GetUserController(getUserUseCase).mount(it)
+        GetUserController(it, getUserUseCase)
     }
 
     @BeforeEach

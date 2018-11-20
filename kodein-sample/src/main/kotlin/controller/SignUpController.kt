@@ -7,9 +7,10 @@ import io.javalin.Context
 import io.javalin.Javalin
 
 class SignUpController(
+    router: Javalin,
     private val signUpUseCase: SignUpUseCase
 ) {
-    fun mount(router: Javalin) {
+    init {
         router.post("/users", this::signUp)
     }
 

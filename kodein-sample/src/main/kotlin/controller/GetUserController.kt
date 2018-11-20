@@ -6,9 +6,10 @@ import io.javalin.Context
 import io.javalin.Javalin
 
 class GetUserController(
+    router: Javalin,
     private val getUserUseCase: GetUserUseCase
 ) {
-    fun mount(router: Javalin) {
+    init {
         router.get("/users/:id", this::getUser)
     }
 

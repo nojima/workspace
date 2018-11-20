@@ -11,6 +11,7 @@ import com.ynojima.kodeinsample.usecase.SignUpUseCase
 import io.javalin.Javalin
 import org.kodein.di.Kodein
 import org.kodein.di.generic.bind
+import org.kodein.di.generic.eagerSingleton
 import org.kodein.di.generic.instance
 import org.kodein.di.generic.singleton
 import org.kodein.di.generic.with
@@ -25,23 +26,19 @@ object MainEnvironment {
         bind<Transactional>() with singleton { MySqlTransactional(instance()) }
 
         bind<SignUpUseCase>() with singleton { SignUpUseCase(instance()) }
-        bind<SignUpController>() with singleton { SignUpController(instance()) }
+        bind<SignUpController>() with eagerSingleton { SignUpController(instance(), instance()) }
 
         bind<GetUserUseCase>() with singleton { GetUserUseCase(instance()) }
-        bind<GetUserController>() with singleton { GetUserController(instance()) }
+        bind<GetUserController>() with eagerSingleton { GetUserController(instance(), instance()) }
 
-        bind<GeneralErrorController>() with singleton { GeneralErrorController() }
+        bind<GeneralErrorController>() with eagerSingleton { GeneralErrorController(instance()) }
 
         constant(tag = "listeningPort") with 7000
 
         bind<Javalin>() with singleton {
-            val app = Javalin.create().apply {
+            Javalin.create().apply {
                 port(instance(tag = "listeningPort"))
             }
-            instance<GeneralErrorController>().mount(app)
-            instance<SignUpController>().mount(app)
-            instance<GetUserController>().mount(app)
-            app
         }
     }
 }

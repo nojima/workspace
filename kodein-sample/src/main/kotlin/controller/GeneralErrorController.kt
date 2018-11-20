@@ -6,13 +6,13 @@ import io.javalin.Context
 import io.javalin.Javalin
 import org.slf4j.LoggerFactory
 
-class GeneralErrorController {
+class GeneralErrorController(router: Javalin) {
 
     companion object {
         val log = LoggerFactory.getLogger(GeneralErrorController::class.java)!!
     }
 
-    fun mount(router: Javalin) {
+    init {
         router.exception(NotFoundException::class.java, this::notFound)
         router.exception(ValidationException::class.java, this::invalidRequest)
         router.exception(Exception::class.java, this::internalServerError)
