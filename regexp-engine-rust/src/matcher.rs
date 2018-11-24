@@ -1,7 +1,7 @@
-use std::iter;
 use either::{Left, Right};
+use std::iter;
 
-pub type Positions<'a> = Box<Iterator<Item=usize> + 'a>;
+pub type Positions<'a> = Box<Iterator<Item = usize> + 'a>;
 
 pub trait Matcher {
     // Returns a sequence of the lengths of matched strings
@@ -16,7 +16,7 @@ pub struct ZeroMatcher;
 
 impl ZeroMatcher {
     pub fn new() -> ZeroMatcher {
-        ZeroMatcher{}
+        ZeroMatcher {}
     }
 }
 
@@ -35,22 +35,20 @@ pub struct CharacterMatcher {
 
 impl CharacterMatcher {
     pub fn new(ch: char) -> CharacterMatcher {
-        CharacterMatcher{
-            ch: ch,
-        }
+        CharacterMatcher { ch: ch }
     }
 }
 
 impl Matcher for CharacterMatcher {
     fn matches<'a>(&'a self, s: &'a str) -> Positions<'a> {
         let expected = self.ch;
-        box s.chars().take(1).filter_map(move |c|
+        box s.chars().take(1).filter_map(move |c| {
             if c == expected {
                 Some(c.len_utf8())
             } else {
                 None
             }
-        )
+        })
     }
 }
 
@@ -61,7 +59,7 @@ pub struct AnyCharacterMatcher;
 
 impl AnyCharacterMatcher {
     pub fn new() -> AnyCharacterMatcher {
-        AnyCharacterMatcher{}
+        AnyCharacterMatcher {}
     }
 }
 
@@ -80,21 +78,23 @@ pub struct RepeatMatcher {
 
 impl RepeatMatcher {
     pub fn new(inner: Box<Matcher>) -> RepeatMatcher {
-        RepeatMatcher{
-            inner: inner,
-        }
+        RepeatMatcher { inner: inner }
     }
 }
 
 impl Matcher for RepeatMatcher {
     fn matches<'a>(&'a self, s: &'a str) -> Positions<'a> {
-        box self.inner.matches(s).flat_map(move |n1|
-            if n1 == 0 {
-                Left(iter::once(0))
-            } else {
-                Right(self.matches(&s[n1..]).map(move |n2| n1 + n2))
-            }
-        ).chain(iter::once(0))
+        box self
+            .inner
+            .matches(s)
+            .flat_map(move |n1| {
+                if n1 == 0 {
+                    Left(iter::once(0))
+                } else {
+                    Right(self.matches(&s[n1..]).map(move |n2| n1 + n2))
+                }
+            })
+            .chain(iter::once(0))
     }
 }
 
@@ -108,7 +108,7 @@ pub struct ConcatenationMatcher {
 
 impl ConcatenationMatcher {
     pub fn new(head: Box<Matcher>, tail: Box<Matcher>) -> ConcatenationMatcher {
-        ConcatenationMatcher{
+        ConcatenationMatcher {
             head: head,
             tail: tail,
         }
@@ -117,9 +117,10 @@ impl ConcatenationMatcher {
 
 impl Matcher for ConcatenationMatcher {
     fn matches<'a>(&'a self, s: &'a str) -> Positions<'a> {
-        box self.head.matches(s).flat_map(move |n1|
-            self.tail.matches(&s[n1..]).map(move |n2| n1 + n2)
-        )
+        box self
+            .head
+            .matches(s)
+            .flat_map(move |n1| self.tail.matches(&s[n1..]).map(move |n2| n1 + n2))
     }
 }
 
@@ -133,7 +134,7 @@ pub struct AlternationMatcher {
 
 impl AlternationMatcher {
     pub fn new(left: Box<Matcher>, right: Box<Matcher>) -> AlternationMatcher {
-        AlternationMatcher{
+        AlternationMatcher {
             left: left,
             right: right,
         }

@@ -1,5 +1,5 @@
-use std::fmt;
 use std::error;
+use std::fmt;
 
 #[derive(Debug)]
 pub struct ParseError {
@@ -8,7 +8,7 @@ pub struct ParseError {
 
 impl ParseError {
     pub fn new(message: &str) -> ParseError {
-        ParseError{
+        ParseError {
             message: message.to_string(),
         }
     }

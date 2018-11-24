@@ -1,12 +1,13 @@
 #![feature(box_syntax)]
 
 extern crate either;
+extern crate failure;
 
+mod matcher;
 mod parse_error;
 mod parser;
-mod matcher;
 
-fn regexp_match<'a>(pattern: &'a str, s: &'a str) -> Option<&'a str> {
+fn regexp_match<'a, 'b>(pattern: &'a str, s: &'b str) -> Option<&'b str> {
     let matcher = parser::compile(pattern).expect("invalid pattern");
     let mut it = matcher.matches(s);
     it.next().map(|n| &s[..n])
@@ -27,12 +28,24 @@ fn test_regexp() {
         ("a*", "bbbbb", Some("")),
         ("c(abc)*", "cabcabcd", Some("cabcabc")),
         ("c(abc)*", "cabacaabcd", Some("c")),
-        ("(hello|world)*", "hellohelloworldhelloheywww", Some("hellohelloworldhello")),
-        (".*Foo.*Bar", "This is Foo and that is Bar.", Some("This is Foo and that is Bar")),
+        (
+            "(hello|world)*",
+            "hellohelloworldhelloheywww",
+            Some("hellohelloworldhello"),
+        ),
+        (
+            ".*Foo.*Bar",
+            "This is Foo and that is Bar.",
+            Some("This is Foo and that is Bar"),
+        ),
         (".*Foo.*Bar", "This is Bar and that is Foo.", None),
         ("(0|1|2|3|4|5|6|7|8|9)* yen", "972 yen.", Some("972 yen")),
         ("(0|1|2|3|4|5|6|7|8|9)* yen", "972 dollers.", None),
-        ("c(a*b*)*d", "caaabbbbbbabaaabdaaaaa", Some("caaabbbbbbabaaabd")),
+        (
+            "c(a*b*)*d",
+            "caaabbbbbbabaaabdaaaaa",
+            Some("caaabbbbbbabaaabd"),
+        ),
         ("(a|b)(a|b)*|c", "cabab", Some("c")),
         (r"\(foo\|bar\)\\\\", r"(foo|bar)\\", Some(r"(foo|bar)\\")),
     ];

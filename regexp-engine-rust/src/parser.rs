@@ -1,5 +1,5 @@
-use parse_error::*;
 use matcher::*;
+use parse_error::*;
 
 fn uncons(s: &str) -> (char, &str) {
     let mut it = s.chars();
@@ -24,7 +24,7 @@ fn compile_character(pattern: &str) -> ParseResult {
             } else {
                 Err(ParseError::new("unmatched parenthese"))
             }
-        },
+        }
         '\\' => {
             let (escaped, rest) = uncons(rest);
             if escaped == '\0' {
@@ -32,7 +32,7 @@ fn compile_character(pattern: &str) -> ParseResult {
             } else {
                 Ok((box CharacterMatcher::new(escaped), rest))
             }
-        },
+        }
         _ => Ok((box CharacterMatcher::new(ch), rest)),
     }
 }
