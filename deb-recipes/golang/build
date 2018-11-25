@@ -1,0 +1,94 @@
+#!/usr/bin/python3
+import argparse
+import logging
+import pathlib
+import subprocess
+import sys
+import tarfile
+import tempfile
+import textwrap
+import urllib.request
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    datefmt="%Y-%m-%d %H:%M:%S%z",
+    format="%(asctime)s | %(levelname)s | %(message)s")
+log = logging.getLogger(__name__)
+
+
+def download_archive(version: str, archive_dir: pathlib.Path) -> pathlib.Path:
+    path = archive_dir / "golang_{}.tar.gz".format(version)
+    if path.exists():
+        log.info("Golang archive already exists locally. Skip download.")
+        return path
+    url = "https://storage.googleapis.com/golang/go{}.linux-amd64.tar.gz" \
+          .format(version)
+    log.info("Download: url=%s, dest=%s", url, path)
+    urllib.request.urlretrieve(url, str(path))
+    return path
+
+
+def extract_archive(archive_path: pathlib.Path,
+                    extract_into: pathlib.Path) -> None:
+    log.info("Extract: archive=%s, dest=%s", archive_path, extract_into)
+    with tarfile.open(str(archive_path)) as tar:
+        tar.extractall(str(extract_into))
+
+
+def generate_control_file(version: str,
+                          revision: str,
+                          dest: pathlib.Path) -> None:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with dest.open('w') as f:
+        f.write(textwrap.dedent("""\
+            Package: nojima-golang
+            Version: {}-{}
+            Architecture: amd64
+            Priority: optional
+            Section: devel
+            Maintainer: Yusuke Nojima <nojima@ynojima.com>
+            Description: Go programming language compiler
+        """).format(version, revision))
+
+
+def build_deb(root_dir: pathlib.Path, dest_dir: pathlib.Path) -> None:
+    cmd = ["fakeroot", "dpkg-deb", "--build", "-Z", "gzip",
+           str(root_dir), str(dest_dir)]
+    subprocess.check_call(cmd)
+
+
+def build(version: str, revision: str, dest_dir: pathlib.Path):
+    golang_archive_path = download_archive(version, pathlib.Path("."))
+    with tempfile.TemporaryDirectory() as temp_dir_str:
+        temp_dir = pathlib.Path(temp_dir_str)
+
+        golang_dir = temp_dir / 'usr/local'
+        extract_archive(golang_archive_path, golang_dir)
+
+        control_path = temp_dir / 'DEBIAN/control'
+        generate_control_file(version, revision, control_path)
+
+        build_deb(temp_dir, dest_dir)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Build the deb package of golang")
+    parser.add_argument('version')
+    parser.add_argument('revision')
+    parser.add_argument('dest_dir')
+    args = parser.parse_args()
+
+    version = args.version
+    revision = args.revision
+    dest_dir = pathlib.Path(args.dest_dir)
+    if not dest_dir.is_dir():
+        log.error("Not a directory: path=%s", dest_dir)
+        sys.exit(2)
+
+    build(version, revision, dest_dir)
+
+
+if __name__ == '__main__':
+    main()
