@@ -23,7 +23,7 @@ proctype P(bit i) {
 
     /* Critical section */
     cnt = cnt + 1;
-    assert(cnt == 1)
+    assert(cnt == 1);
     cnt = cnt - 1;
     /* End of critical section */
 
