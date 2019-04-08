@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/nojima/workspace/go-rest-server/greeting"
 	"github.com/nojima/workspace/go-rest-server/health"
 	"github.com/nojima/workspace/go-rest-server/server"
 	"go.uber.org/zap"
@@ -30,6 +31,7 @@ func doMain(logger *zap.Logger) error {
 	mux.Use(server.RequestLogger(logger))
 
 	health.RegisterHandler(mux)
+	greeting.RegisterHandler(mux)
 
 	ctx := context.Background()
 	srv := server.New(logger, 8080, mux)
