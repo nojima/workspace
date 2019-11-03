@@ -1,5 +1,6 @@
 package controller
 
+import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.doThrow
@@ -15,7 +16,6 @@ import com.ynojima.kodeinsample.controller.GetUserController
 import com.ynojima.kodeinsample.controller.GetUserController.GetUserResponseBody
 import com.ynojima.kodeinsample.exception.UserNotFoundException
 import com.ynojima.kodeinsample.usecase.GetUserUseCase
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName

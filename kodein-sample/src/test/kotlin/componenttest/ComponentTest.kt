@@ -1,6 +1,7 @@
 package componenttest
 
 import TestDataSourceFactory
+import com.google.common.truth.Truth.assertThat
 import com.ynojima.kodeinsample.Application
 import com.ynojima.kodeinsample.MainEnvironment
 import com.ynojima.kodeinsample.TestHttpClient
@@ -8,7 +9,6 @@ import com.ynojima.kodeinsample.controller.GetUserController.GetUserResponseBody
 import com.ynojima.kodeinsample.controller.SignUpController.SignUpRequestBody
 import com.ynojima.kodeinsample.controller.SignUpController.SignUpResponseBody
 import com.ynojima.kodeinsample.database.DatabaseOperator
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

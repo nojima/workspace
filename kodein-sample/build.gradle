@@ -55,7 +55,7 @@ dependencies {
     testImplementation "org.junit.platform:junit-platform-launcher:${junitPlatformVersion}"
 
     // Assertion
-    testImplementation "org.assertj:assertj-core:3.11.1"
+    testImplementation "com.google.truth:truth:1.0"
 
     // Mock
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.0.0"

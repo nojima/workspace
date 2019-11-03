@@ -1,15 +1,15 @@
 package usecase
 
+import com.google.common.truth.Truth.assertThat
 import com.ynojima.kodeinsample.Password
 import com.ynojima.kodeinsample.UserId
 import com.ynojima.kodeinsample.UserName
 import com.ynojima.kodeinsample.exception.DuplicatedUserNameException
 import com.ynojima.kodeinsample.repository.impl.InMemoryTransactional
 import com.ynojima.kodeinsample.usecase.SignUpUseCase
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 internal class SignUpUseCaseTest {
     private val transactional = InMemoryTransactional()
@@ -34,8 +34,8 @@ internal class SignUpUseCaseTest {
         sut.signUp(UserName("alice"), Password("open sesame"))
 
         // Exercise & Verify
-        assertThatThrownBy {
+        assertThrows<DuplicatedUserNameException> {
             sut.signUp(UserName("alice"), Password("open sesame"))
-        }.isInstanceOf(DuplicatedUserNameException::class.java)
+        }
     }
 }

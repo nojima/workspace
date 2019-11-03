@@ -1,8 +1,8 @@
+import com.google.common.truth.Truth.assertThat
 import com.ynojima.kodeinsample.UserName
 import com.ynojima.kodeinsample.exception.InvalidUserNameException
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 
@@ -37,8 +37,8 @@ internal class UserNameTest {
     @DisplayName("異常系")
     fun abnormalCases(case: AbnormalCase) {
         // Exercise & Verify
-        assertThatThrownBy {
+        assertThrows<InvalidUserNameException> {
             UserName(case.input)
-        }.isInstanceOf(InvalidUserNameException::class.java)
+        }
     }
 }

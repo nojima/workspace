@@ -1,12 +1,12 @@
 package repository.impl
 
+import com.google.common.truth.Truth.assertThat
 import com.ynojima.kodeinsample.Password
 import com.ynojima.kodeinsample.User
 import com.ynojima.kodeinsample.UserId
 import com.ynojima.kodeinsample.UserName
 import com.ynojima.kodeinsample.repository.Transactional
 import com.ynojima.kodeinsample.repository.UserRepository
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
