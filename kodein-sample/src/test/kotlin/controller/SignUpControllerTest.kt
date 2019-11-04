@@ -26,7 +26,7 @@ import org.junit.jupiter.params.provider.EnumSource
 
 internal class SignUpControllerTest {
     private val signUpUseCase = mock<SignUpUseCase>()
-    private val app = TestJavalin.create().also {
+    private val app = TestJavalin.new().also {
         SignUpController(it, signUpUseCase)
     }
 

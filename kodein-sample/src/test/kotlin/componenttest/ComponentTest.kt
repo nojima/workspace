@@ -27,7 +27,7 @@ class ComponentTest {
         // ポートが被らないようにランダムポートを使うようにする
         constant(tag = "listeningPort", overrides = true) with 0
         // テスト用のMySQLを使う
-        bind<DataSource>(overrides = true) with singleton { TestDataSourceFactory.create() }
+        bind<DataSource>(overrides = true) with singleton { TestDataSourceFactory.new() }
     }
 
     private val app = Application(diContainer)

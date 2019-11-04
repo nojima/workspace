@@ -2,7 +2,7 @@ import com.ynojima.kodeinsample.controller.GeneralErrorController
 import io.javalin.Javalin
 
 object TestJavalin {
-    fun create(): Javalin {
+    fun new(): Javalin {
         val app = Javalin.create { config ->
             config.showJavalinBanner = false
             config.enableDevLogging()

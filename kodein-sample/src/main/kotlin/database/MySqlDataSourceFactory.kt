@@ -4,7 +4,7 @@ import com.zaxxer.hikari.HikariDataSource
 import javax.sql.DataSource
 
 object MySqlDataSourceFactory {
-    fun create(host: String, port: Int, dbName: String, user: String, password: String): DataSource {
+    fun new(host: String, port: Int, dbName: String, user: String, password: String): DataSource {
         val ds = HikariDataSource()
         ds.driverClassName = "org.mariadb.jdbc.Driver"
         ds.jdbcUrl = "jdbc:mysql://$host:$port/$dbName"

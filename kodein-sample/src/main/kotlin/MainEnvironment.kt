@@ -20,7 +20,7 @@ import javax.sql.DataSource
 object MainEnvironment {
     val diContainer = Kodein {
         bind<DataSource>() with singleton {
-            MySqlDataSourceFactory.create("localhost", 3306, "kodein_sample", "root", "")
+            MySqlDataSourceFactory.new("localhost", 3306, "kodein_sample", "root", "")
         }
 
         bind<Transactional>() with singleton { MySqlTransactional(instance()) }
