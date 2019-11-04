@@ -36,8 +36,8 @@ object MainEnvironment {
         constant(tag = "listeningPort") with 7000
 
         bind<Javalin>() with singleton {
-            Javalin.create().apply {
-                port(instance(tag = "listeningPort"))
+            Javalin.create { config ->
+                config.showJavalinBanner = false
             }
         }
     }

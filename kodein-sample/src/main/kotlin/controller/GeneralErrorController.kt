@@ -2,7 +2,7 @@ package com.ynojima.kodeinsample.controller
 
 import com.ynojima.kodeinsample.exception.NotFoundException
 import com.ynojima.kodeinsample.exception.ValidationException
-import io.javalin.Context
+import io.javalin.http.Context
 import io.javalin.Javalin
 import org.slf4j.LoggerFactory
 

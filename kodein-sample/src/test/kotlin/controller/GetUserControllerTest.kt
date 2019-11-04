@@ -7,8 +7,8 @@ import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import com.ynojima.kodeinsample.Password
-import com.ynojima.kodeinsample.TestHttpClient
-import com.ynojima.kodeinsample.TestJavalin
+import TestHttpClient
+import TestJavalin
 import com.ynojima.kodeinsample.User
 import com.ynojima.kodeinsample.UserId
 import com.ynojima.kodeinsample.UserName
@@ -29,7 +29,7 @@ internal class GetUserControllerTest {
 
     @BeforeEach
     fun start() {
-        app.start()
+        app.start(0)
     }
 
     @AfterEach

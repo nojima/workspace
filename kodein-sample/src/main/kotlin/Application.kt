@@ -14,7 +14,8 @@ class Application(private val diContainer: Kodein) : AutoCloseable {
         val operator by diContainer.newInstance { DatabaseOperator(instance()) }
         operator.migrate()
 
-        javalin.start()
+        val listeningPort by diContainer.instance<Int>(tag = "listeningPort")
+        javalin.start(listeningPort)
     }
 
     override fun close() {

@@ -3,7 +3,7 @@ package com.ynojima.kodeinsample.controller
 import com.ynojima.kodeinsample.Password
 import com.ynojima.kodeinsample.UserName
 import com.ynojima.kodeinsample.usecase.SignUpUseCase
-import io.javalin.Context
+import io.javalin.http.Context
 import io.javalin.Javalin
 
 class SignUpController(

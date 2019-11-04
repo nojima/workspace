@@ -4,7 +4,7 @@ import TestDataSourceFactory
 import com.google.common.truth.Truth.assertThat
 import com.ynojima.kodeinsample.Application
 import com.ynojima.kodeinsample.MainEnvironment
-import com.ynojima.kodeinsample.TestHttpClient
+import TestHttpClient
 import com.ynojima.kodeinsample.controller.GetUserController.GetUserResponseBody
 import com.ynojima.kodeinsample.controller.SignUpController.SignUpRequestBody
 import com.ynojima.kodeinsample.controller.SignUpController.SignUpResponseBody
