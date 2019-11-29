@@ -1,0 +1,5 @@
+profile: service
+defaultPackage: micronaut.hello.world
+---
+testFramework: kotlintest
+sourceLanguage: kotlin
