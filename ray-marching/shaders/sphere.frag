@@ -25,14 +25,22 @@ vec3 GradientDirection(vec3 p) {
     return normalize(vec3(dx, dy, dz));
 }
 
-vec3 RenderMaterial(vec3 p) {
+vec3 RenderMaterial(vec3 p, vec3 normal, vec3 cameraPos) {
     const vec3 albedo = vec3(0.7, 0.8, 0.3);
+    const vec3 lightDir = normalize(vec3(-0.3, 1.0, -1.0));
+    const float shininess = 50.0;
+    const float fresnel = 0.1;
+
     vec3 color = vec3(0.0, 0.0, 0.0);
 
-    // Diffuse
-    vec3 light = normalize(vec3(-0.3, 1.0, -1.0));
-    vec3 normal  = GradientDirection(p);
-    color += albedo * max(dot(light, normal), 0.0) / PI;
+    // Diffuse (Lambert)
+    color += albedo * max(dot(lightDir, normal), 0.0) / PI;
+
+    // Specular (Phong)
+    vec3 viewDir = normalize(cameraPos - p);
+    vec3 reflectionDir = -reflect(lightDir, normal);
+    float d = max(dot(reflectionDir, viewDir), 0.0);
+    color += fresnel * (shininess + 1.0) * pow(d, shininess) / (2.0 * PI);
 
     // Ambient
     const float ambient = 0.3;
@@ -48,8 +56,10 @@ vec3 RayMarching(vec3 screenPos, vec3 cameraPos, vec3 backgroundColor) {
     for (int i = 0; i < LOOP_COUNT; i++) {
         vec3 p = cameraPos + rayDir * depth;
         float dist = DistanceField(p);
-        if (dist < EPS)
-            return RenderMaterial(p);
+        if (dist < EPS) {
+            vec3 normal = GradientDirection(p);
+            return RenderMaterial(p, normal, cameraPos);
+        }
         depth += dist;
     }
 
@@ -60,7 +70,7 @@ void main() {
     vec2 st = (gl_FragCoord.xy * 2.0 - uResolution) / min(uResolution.x, uResolution.y);
 
     const vec3 cameraPos = vec3(0.0, 0.0, -5.0);
-    const float screenZ = 2.5;
+    const float screenZ = 0.0;
     const vec3 backgroundColor = vec3(0.2, 0.2, 0.2);
 
     vec3 color = RayMarching(vec3(st, screenZ), cameraPos, backgroundColor);
