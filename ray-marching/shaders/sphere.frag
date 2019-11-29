@@ -2,7 +2,7 @@
 precision highp float;
 #endif
 
-const int LOOP_COUNT = 50;
+const int LOOP_COUNT = 100;
 
 const float EPS = 1e-4;
 const float PI = acos(-1.0);
@@ -14,7 +14,10 @@ float Sphere(vec3 p, vec3 center, float radius) {
 }
 
 float DistanceField(vec3 p) {
-    return Sphere(p, vec3(0.0, 0.0, 0.0), 0.5);
+    p.z = mod(p.z, 1.0);
+    p.y = mod(p.y, 1.0);
+    p.x = mod(p.x, 0.5);
+    return Sphere(p, vec3(0.25, 0.5, 0.5), 0.1);
 }
 
 vec3 GradientDirection(vec3 p) {
@@ -69,7 +72,7 @@ vec3 RayMarching(vec3 screenPos, vec3 cameraPos, vec3 backgroundColor) {
 void main() {
     vec2 st = (gl_FragCoord.xy * 2.0 - uResolution) / min(uResolution.x, uResolution.y);
 
-    const vec3 cameraPos = vec3(0.0, 0.0, -5.0);
+    const vec3 cameraPos = vec3(0.0, 0.25, -3.0);
     const float screenZ = 0.0;
     const vec3 backgroundColor = vec3(0.2, 0.2, 0.2);
 
