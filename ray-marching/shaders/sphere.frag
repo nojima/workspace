@@ -8,16 +8,19 @@ const float EPS = 1e-4;
 const float PI = acos(-1.0);
 
 uniform vec2 uResolution;
+uniform float uTime;
 
 float Sphere(vec3 p, vec3 center, float radius) {
     return distance(p, center) - radius;
 }
 
 float DistanceField(vec3 p) {
+    p.y += uTime;
+    p.z += 3.0 * uTime;
     p.z = mod(p.z, 1.0);
     p.y = mod(p.y, 1.0);
-    p.x = mod(p.x, 0.5);
-    return Sphere(p, vec3(0.25, 0.5, 0.5), 0.1);
+    p.x = mod(p.x, 0.8);
+    return Sphere(p, vec3(0.4, 0.5, 0.5), 0.1);
 }
 
 vec3 GradientDirection(vec3 p) {
@@ -30,7 +33,7 @@ vec3 GradientDirection(vec3 p) {
 
 vec3 RenderMaterial(vec3 p, float depth, vec3 normal, vec3 cameraPos) {
     const vec3 albedo = vec3(0.7, 0.8, 0.3);
-    const float lightIntencity = 1.2;
+    const float lightIntencity = 1.5;
     const vec3 lightDir = normalize(vec3(-0.3, 1.0, -1.0));
     const float shininess = 50.0;
     const float fresnel = 0.1;

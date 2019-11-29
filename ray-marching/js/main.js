@@ -9,12 +9,13 @@ async function downloadText(url) {
     return await resp.text();
 }
 
-async function newShaderMaterial(resolution) {
+async function newShaderMaterial(uTime, uResolution) {
     var vertexShader = await downloadText("/shaders/basic.vert");
     var fragmentShader = await downloadText("/shaders/sphere.frag");
 
     const uniforms = {
-        uResolution: { value: resolution },
+        uResolution: uResolution,
+        uTime: uTime,
     };
 
     return new THREE.RawShaderMaterial({
@@ -36,13 +37,17 @@ async function main() {
     renderer.gammaFactor = 2.2;
     document.body.appendChild(renderer.domElement);
 
+    const uTime = new THREE.Uniform(0.0);
+    const uResolution = new THREE.Uniform(new THREE.Vector2(window.innerWidth, window.innerHeight));
+
     const geometry = new THREE.PlaneGeometry(1.0, 1.0);
-    const material = await newShaderMaterial(new THREE.Vector2(window.innerWidth, window.innerHeight));
+    const material = await newShaderMaterial(uTime, uResolution);
     const plane = new THREE.Mesh(geometry, material);
 
     scene.add(plane);
 
     function render() {
+        uTime.value = performance.now() / 1000.0;
         renderer.render(scene, camera);
     }
     renderer.setAnimationLoop(render);
