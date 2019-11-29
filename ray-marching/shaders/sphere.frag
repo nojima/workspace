@@ -28,8 +28,9 @@ vec3 GradientDirection(vec3 p) {
     return normalize(vec3(dx, dy, dz));
 }
 
-vec3 RenderMaterial(vec3 p, vec3 normal, vec3 cameraPos) {
+vec3 RenderMaterial(vec3 p, float depth, vec3 normal, vec3 cameraPos) {
     const vec3 albedo = vec3(0.7, 0.8, 0.3);
+    const float lightIntencity = 1.2;
     const vec3 lightDir = normalize(vec3(-0.3, 1.0, -1.0));
     const float shininess = 50.0;
     const float fresnel = 0.1;
@@ -37,19 +38,19 @@ vec3 RenderMaterial(vec3 p, vec3 normal, vec3 cameraPos) {
     vec3 color = vec3(0.0, 0.0, 0.0);
 
     // Diffuse (Lambert)
-    color += albedo * max(dot(lightDir, normal), 0.0) / PI;
+    color += albedo * max(dot(lightDir, normal), 0.0) * lightIntencity / PI;
 
     // Specular (Phong)
     vec3 viewDir = normalize(cameraPos - p);
     vec3 reflectionDir = -reflect(lightDir, normal);
     float d = max(dot(reflectionDir, viewDir), 0.0);
-    color += fresnel * (shininess + 1.0) * pow(d, shininess) / (2.0 * PI);
+    color += fresnel * (shininess + 1.0) * pow(d, shininess) * lightIntencity / (2.0 * PI);
 
     // Ambient
     const float ambient = 0.3;
-    color += albedo * ambient;
+    color += albedo * ambient * lightIntencity;
 
-    return color;
+    return color * exp(-0.1 * depth);
 }
 
 vec3 RayMarching(vec3 screenPos, vec3 cameraPos, vec3 backgroundColor) {
@@ -61,7 +62,7 @@ vec3 RayMarching(vec3 screenPos, vec3 cameraPos, vec3 backgroundColor) {
         float dist = DistanceField(p);
         if (dist < EPS) {
             vec3 normal = GradientDirection(p);
-            return RenderMaterial(p, normal, cameraPos);
+            return RenderMaterial(p, depth, normal, cameraPos);
         }
         depth += dist;
     }
@@ -74,7 +75,7 @@ void main() {
 
     const vec3 cameraPos = vec3(0.0, 0.25, -3.0);
     const float screenZ = 0.0;
-    const vec3 backgroundColor = vec3(0.2, 0.2, 0.2);
+    const vec3 backgroundColor = vec3(0.0, 0.0, 0.0);
 
     vec3 color = RayMarching(vec3(st, screenZ), cameraPos, backgroundColor);
     gl_FragColor = vec4(color, 1.0);
