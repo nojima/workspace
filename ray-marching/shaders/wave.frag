@@ -5,6 +5,8 @@ precision highp float;
 precision highp int;
 #endif
 
+const float PI = acos(-1.0);
+
 uniform vec2 uResolution;
 uniform float uTime;
 
@@ -126,12 +128,37 @@ float castRay(vec3 cameraPos, vec3 rayDir, out vec3 outSurfacePos) {
     return middle;
 }
 
+float fresnel(float cosine, float f0) {
+    return f0 + (1.0 - f0) * pow(1.0 - cosine, 5.0);
+}
+
 vec3 diffuse(vec3 normal, vec3 light) {
-    return (dot(normal, light) * 0.4 + 0.6) * vec3(0.5, 0.5, 0.5);
+    const vec3 albedo = vec3(0.8, 0.9, 0.6);
+    return dot(normal, light) * albedo / PI;
+}
+
+float specular(vec3 normal, vec3 light, vec3 eye) {
+    const float shininess = 50.0;
+    vec3 reflectionDir = -reflect(light, normal);
+    float d = max(dot(reflectionDir, eye), 0.0);
+    return (shininess + 1.0) * pow(d, shininess) / (2.0 * PI);
+}
+
+vec3 renderSea(vec3 p, vec3 normal, vec3 light, vec3 eye) {
+    float fr = fresnel(max(dot(normal, -eye), 0.0), 0.35);
+
+    vec3 reflected = renderSky(reflect(eye, normal));
+    vec3 refracted = vec3(0.1, 0.19, 0.22) + diffuse(normal, light);
+
+    vec3 color = mix(reflected, refracted, fr);
+
+    color += fr * specular(normal, light, eye);
+
+    return color;
 }
 
 vec3 render(vec2 coord) {
-    const vec3 light = normalize(vec3(0.0, 1.0, 0.8));
+    const vec3 light = normalize(vec3(0.0, 1.0, 0.5));
     vec3 cameraPos = vec3(0.0, 3.5, 5.0);
     float screenZ = -2.0;
     vec3 rayDir = normalize(vec3(coord, screenZ));
@@ -139,21 +166,13 @@ vec3 render(vec2 coord) {
     vec3 surfacePos;
     float depth = castRay(cameraPos, rayDir, surfacePos);
 
-    //return depth * 0.01 * vec3(1.0, 1.0, 1.0);
-
     float epsilonNrm = 0.1 / uResolution.x;
     vec3 normal = gradient(surfacePos, 1e-4);
 
-    //return normal.rbg * 0.5 + 0.5;
+    vec3 seaColor = renderSea(surfacePos, normal, light, rayDir);
+    vec3 skyColor = renderSky(rayDir);
 
-    vec3 seaColor = diffuse(normal, light);
-    //vec3 skyColor = renderSky(rayDir);
-
-    return seaColor;
-    /*
-    float h = heightMap(coord * 10.0) * 0.5;
-    return vec3(h, h, h);
-    */
+    return mix(seaColor, skyColor, depth / 1000.0);
 }
 
 vec3 sRGB(vec3 linearColor) {
