@@ -119,13 +119,20 @@ vec3 LinearToSRGB(vec3 color) {
     );
 }
 
+mat3 RotateXMatrix(float theta) {
+    return mat3(cos(theta), 0.0, sin(theta),
+                0.0, 1.0, 0.0,
+                -sin(theta), 0.0, cos(theta));
+}
+
 void main() {
     vec2 st = (gl_FragCoord.xy * 2.0 - uResolution) / uResolution;
 
     //float r = PerlinNoise2D(st * 10.0) * 0.5 + 0.5;
-    float r = PerlinNoise3D(vec3(st * 10.0, uTime * 0.5)) * 0.5 + 0.5;
+    vec3 p = RotateXMatrix(1.0) * vec3(st * 5.0, uTime * 1.0);
+    float r = PerlinNoise3D(p) * 0.8 + 0.6;
 
-    vec3 albedo = vec3(0.5, 0.5, 0.5);
+    vec3 albedo = vec3(1.0, 1.0, 1.0);
     vec3 srgb = LinearToSRGB(albedo * r);
     gl_FragColor = vec4(srgb, 1.0);
 }
