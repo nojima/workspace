@@ -58,6 +58,8 @@ float wave(vec2 coord, float choppy) {
 float heightMap(vec2 coord) {
     const mat2 octave_m = mat2(1.6, 1.2, -1.2, 1.6);
 
+    coord += 10.0;
+
     float freq = 0.16;
     float amp = 0.6;
     float choppy = 4.0;
@@ -109,7 +111,6 @@ float castRay(vec3 cameraPos, vec3 rayDir, out vec3 outSurfacePos) {
 
     float middle;
     vec3 middlePos;
-
     for (int i = 0; i < 8; ++i) {
         float alpha = nearAlt / (nearAlt - farAlt);
         middle = mix(near, far, alpha);
@@ -138,32 +139,32 @@ vec3 diffuse(vec3 normal, vec3 light) {
 }
 
 float specular(vec3 normal, vec3 light, vec3 eye) {
-    const float shininess = 20.0;
+    const float shininess = 30.0;
     vec3 reflectionDir = -reflect(light, normal);
-    float d = max(dot(reflectionDir, eye), 0.0);
+    float d = max(dot(reflectionDir, -eye), 0.0);
     return (shininess + 1.0) * pow(d, shininess) / (2.0 * PI);
 }
 
 vec3 fog(vec3 baseColor, vec3 fogColor, float depth) {
-    float alpha = exp(-depth * 0.01);
+    float alpha = exp(-depth * 0.005);
     return mix(fogColor, baseColor, alpha);
 }
 
 vec3 renderSea(vec3 p, vec3 normal, vec3 light, vec3 eye, float depth) {
-    float fr = fresnel(max(dot(normal, -eye), 0.0), 0.2);
+    float fr = fresnel(max(dot(normal, -eye), 0.0), 0.4);
 
     vec3 reflected = renderSky(reflect(eye, normal));
-    vec3 refracted = vec3(0.1, 0.19, 0.22) + diffuse(normal, light);
+    vec3 refracted = vec3(0.0, 0.1, 0.3) + diffuse(normal, light);
 
-    vec3 color = mix(reflected, refracted, fr);
-
+    vec3 color = vec3(0.0, 0.0, 0.0);
+    color += mix(refracted, reflected, fr);
     color += fr * specular(normal, light, eye);
 
     return fog(color, vec3(1.0, 1.0, 1.0), depth);
 }
 
 vec3 render(vec2 coord) {
-    const vec3 light = normalize(vec3(0.0, 1.0, 0.5));
+    const vec3 light = normalize(vec3(1.0, 1.0, 0.5));
     vec3 cameraPos = vec3(0.0, 3.5, 5.0);
     vec3 rayDir = normalize(vec3(coord, 0.0) + vec3(0.0, -0.5, -2.0));
 
