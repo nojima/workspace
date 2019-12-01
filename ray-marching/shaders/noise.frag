@@ -1,5 +1,8 @@
+#version 300 es
+
 #ifdef GL_ES
 precision highp float;
+precision highp int;
 #endif
 
 const float PI = acos(-1.0);
@@ -8,6 +11,8 @@ const float SQRT2 = sqrt(2.0);
 
 uniform vec2 uResolution;
 uniform float uTime;
+
+out vec4 out_FragColor;
 
 float Noise21(vec2 st) {
     float t = dot(st, vec2(12.9898, 78.233));
@@ -134,5 +139,5 @@ void main() {
 
     vec3 albedo = vec3(1.0, 1.0, 1.0);
     vec3 srgb = LinearToSRGB(albedo * r);
-    gl_FragColor = vec4(srgb, 1.0);
+    out_FragColor = vec4(srgb, 1.0);
 }

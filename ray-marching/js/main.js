@@ -29,7 +29,9 @@ async function main() {
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 0.0, 1000.0);
 
-    const renderer = new THREE.WebGLRenderer();
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("webgl2", { alpha: false });
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, context: context });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0x333333, 1);
     renderer.gammaInput = true;

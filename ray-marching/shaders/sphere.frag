@@ -1,5 +1,8 @@
+#version 300 es
+
 #ifdef GL_ES
 precision highp float;
+precision highp int;
 #endif
 
 const int LOOP_COUNT = 100;
@@ -9,6 +12,8 @@ const float PI = acos(-1.0);
 
 uniform vec2 uResolution;
 uniform float uTime;
+
+out vec4 out_FragColor;
 
 float Sphere(vec3 p, vec3 center, float radius) {
     return distance(p, center) - radius;
@@ -81,5 +86,5 @@ void main() {
     const vec3 backgroundColor = vec3(0.0, 0.0, 0.0);
 
     vec3 color = RayMarching(vec3(st, screenZ), cameraPos, backgroundColor);
-    gl_FragColor = vec4(color, 1.0);
+    out_FragColor = vec4(color, 1.0);
 }
