@@ -165,8 +165,7 @@ vec3 renderSea(vec3 p, vec3 normal, vec3 light, vec3 eye, float depth) {
 vec3 render(vec2 coord) {
     const vec3 light = normalize(vec3(0.0, 1.0, 0.5));
     vec3 cameraPos = vec3(0.0, 3.5, 5.0);
-    float screenZ = -2.0;
-    vec3 rayDir = normalize(vec3(coord, screenZ));
+    vec3 rayDir = normalize(vec3(coord, 0.0) + vec3(0.0, -0.5, -2.0));
 
     vec3 surfacePos;
     float depth = castRay(cameraPos, rayDir, surfacePos);
