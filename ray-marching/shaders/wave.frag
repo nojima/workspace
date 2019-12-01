@@ -91,30 +91,27 @@ vec3 gradient(vec3 p, float eps) {
     float dax = (ax - a0) / eps;
     float daz = (az - a0) / eps;
     return normalize(vec3(
-        sign(ax) * sqrt(dax * dax + 1.0),
+        sign(dax) * sqrt(dax * dax + 1.0),
         1.0,
-        sign(az) * sqrt(daz * daz + 1.0)
+        sign(daz) * sqrt(daz * daz + 1.0)
     ));
 }
 
-float castRay(vec3 cameraPos, vec3 rayDir, out vec3 outSurfacePos) {
+float castRay(vec3 cameraPos, vec3 rayDir) {
     float near = 0.0;
     float far = 1000.0;
 
     float farAlt = altitude(cameraPos + rayDir * far);
-    if (farAlt > 0.0) {
-        outSurfacePos = vec3(0.0, 0.0, 0.0);
+    if (farAlt >= 0.0) {
         return far;
     }
-
     float nearAlt = altitude(cameraPos + rayDir * near);
 
     float middle;
-    vec3 middlePos;
     for (int i = 0; i < 8; ++i) {
         float alpha = nearAlt / (nearAlt - farAlt);
         middle = mix(near, far, alpha);
-        middlePos = cameraPos + rayDir * middle;
+        vec3 middlePos = cameraPos + rayDir * middle;
         float middleAlt = altitude(middlePos);
         if (middleAlt < 0.0) {
             far = middle;
@@ -124,8 +121,6 @@ float castRay(vec3 cameraPos, vec3 rayDir, out vec3 outSurfacePos) {
             nearAlt = middleAlt;
         }
     }
-
-    outSurfacePos = middlePos;
     return middle;
 }
 
@@ -168,8 +163,8 @@ vec3 render(vec2 coord) {
     vec3 cameraPos = vec3(0.0, 3.5, 5.0);
     vec3 rayDir = normalize(vec3(coord, 0.0) + vec3(0.0, -0.5, -2.0));
 
-    vec3 surfacePos;
-    float depth = castRay(cameraPos, rayDir, surfacePos);
+    float depth = castRay(cameraPos, rayDir);
+    vec3 surfacePos = cameraPos + rayDir * depth;
 
     float eps = (depth + 1.0) * 0.05 / min(uResolution.x, uResolution.y);
     vec3 normal = gradient(surfacePos, eps);
