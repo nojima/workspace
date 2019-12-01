@@ -171,8 +171,8 @@ vec3 render(vec2 coord) {
     vec3 surfacePos;
     float depth = castRay(cameraPos, rayDir, surfacePos);
 
-    float epsilonNrm = 0.1 / uResolution.x;
-    vec3 normal = gradient(surfacePos, 1e-4);
+    float eps = (depth + 1.0) * 0.05 / min(uResolution.x, uResolution.y);
+    vec3 normal = gradient(surfacePos, eps);
 
     vec3 seaColor = renderSea(surfacePos, normal, light, rayDir, depth);
     vec3 skyColor = renderSky(rayDir);
