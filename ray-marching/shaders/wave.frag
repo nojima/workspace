@@ -138,19 +138,19 @@ vec3 diffuse(vec3 normal, vec3 light) {
 }
 
 float specular(vec3 normal, vec3 light, vec3 eye) {
-    const float shininess = 50.0;
+    const float shininess = 20.0;
     vec3 reflectionDir = -reflect(light, normal);
     float d = max(dot(reflectionDir, eye), 0.0);
     return (shininess + 1.0) * pow(d, shininess) / (2.0 * PI);
 }
 
 vec3 fog(vec3 baseColor, vec3 fogColor, float depth) {
-    float alpha = exp(-depth * 0.005);
+    float alpha = exp(-depth * 0.01);
     return mix(fogColor, baseColor, alpha);
 }
 
 vec3 renderSea(vec3 p, vec3 normal, vec3 light, vec3 eye, float depth) {
-    float fr = fresnel(max(dot(normal, -eye), 0.0), 0.35);
+    float fr = fresnel(max(dot(normal, -eye), 0.0), 0.2);
 
     vec3 reflected = renderSky(reflect(eye, normal));
     vec3 refracted = vec3(0.1, 0.19, 0.22) + diffuse(normal, light);
