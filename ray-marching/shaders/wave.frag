@@ -82,12 +82,14 @@ float altitude(vec3 p) {
 
 vec3 gradient(vec3 p, float eps) {
     float a0 = altitude(p);
-    float dax = (altitude(p + vec3(eps, 0.0, 0.0)) - a0) / eps;
-    float daz = (altitude(p + vec3(0.0, 0.0, eps)) - a0) / eps;
+    float ax = altitude(p + vec3(eps, 0.0, 0.0));
+    float az = altitude(p + vec3(0.0, 0.0, eps));
+    float dax = (ax - a0) / eps;
+    float daz = (az - a0) / eps;
     return normalize(vec3(
-        sqrt(dax * dax + 1.0),
+        sign(ax) * sqrt(dax * dax + 1.0),
         1.0,
-        sqrt(daz * daz + 1.0)
+        sign(az) * sqrt(daz * daz + 1.0)
     ));
 }
 
@@ -137,16 +139,18 @@ vec3 render(vec2 coord) {
     vec3 surfacePos;
     float depth = castRay(cameraPos, rayDir, surfacePos);
 
-    return depth * 0.01 * vec3(1.0, 1.0, 1.0);
+    //return depth * 0.01 * vec3(1.0, 1.0, 1.0);
 
-    /*
     float epsilonNrm = 0.1 / uResolution.x;
-    vec3 normal = gradient(surfacePos, depth * depth * epsilonNrm);
+    vec3 normal = gradient(surfacePos, 1e-4);
+
+    //return normal.rbg * 0.5 + 0.5;
 
     vec3 seaColor = diffuse(normal, light);
     //vec3 skyColor = renderSky(rayDir);
 
     return seaColor;
+    /*
     float h = heightMap(coord * 10.0) * 0.5;
     return vec3(h, h, h);
     */
