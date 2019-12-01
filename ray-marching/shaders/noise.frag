@@ -45,12 +45,12 @@ float ValueNoise(vec2 st) {
 }
 */
 
-vec2 RandomUnitVector2D(vec2 st) {
+vec2 RandomUnitVector(vec2 st) {
     float r = TAU * Noise21(st);
     return vec2(cos(r), sin(r));
 }
 
-vec3 RandomUnitVector3D(vec3 p) {
+vec3 RandomUnitVector(vec3 p) {
     float r1 = Noise31_1(p) * 2.0;
     float r2 = Noise31_2(p) * TAU;
     float theta = acos(1.0 - r1);
@@ -58,36 +58,32 @@ vec3 RandomUnitVector3D(vec3 p) {
     return vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
 }
 
-float LocalDisplacement2D(vec2 grid, vec2 st) {
-    vec2 localPos = st - grid;
-    vec2 grad = RandomUnitVector2D(grid);
-    return dot(grad, localPos);
-}
+#define DEFINE_LOCAL_DISPLACEMENT(T) \
+    float LocalDisplacement(T grid, T p) { \
+        T localPos = p - grid; \
+        T grad = RandomUnitVector(grid); \
+        return dot(grad, localPos); \
+    }
+DEFINE_LOCAL_DISPLACEMENT(vec2)
+DEFINE_LOCAL_DISPLACEMENT(vec3)
 
-float LocalDisplacement3D(vec3 grid, vec3 p) {
-    vec3 localPos = p - grid;
-    vec3 grad = RandomUnitVector3D(grid);
-    return dot(grad, localPos);
-}
-
-vec2 QuinticInterpolation2D(vec2 x) {
-    return x * x * x * (10.0 + x * (-15.0 + x * 6.0));
-}
-
-vec3 QuinticInterpolation3D(vec3 x) {
-    return x * x * x * (10.0 + x * (-15.0 + x * 6.0));
-}
+#define DEFINE_QUINTIC_INTERPOLATION(T) \
+    T QuinticInterpolation(T x) { \
+        return x * x * x * (10.0 + x * (-15.0 + x * 6.0)); \
+    }
+DEFINE_QUINTIC_INTERPOLATION(vec2)
+DEFINE_QUINTIC_INTERPOLATION(vec3)
 
 float PerlinNoise2D(vec2 st) {
     vec2 grid0 = floor(st);
     vec2 grid1 = grid0 + 1.0;
 
-    float v0 = LocalDisplacement2D(grid0, st);
-    float v1 = LocalDisplacement2D(vec2(grid1.x, grid0.y), st);
-    float v2 = LocalDisplacement2D(vec2(grid0.x, grid1.y), st);
-    float v3 = LocalDisplacement2D(grid1, st);
+    float v0 = LocalDisplacement(grid0, st);
+    float v1 = LocalDisplacement(vec2(grid1.x, grid0.y), st);
+    float v2 = LocalDisplacement(vec2(grid0.x, grid1.y), st);
+    float v3 = LocalDisplacement(grid1, st);
 
-    vec2 a = QuinticInterpolation2D(fract(st));
+    vec2 a = QuinticInterpolation(fract(st));
 
     return SQRT2 * mix(mix(v0, v1, a.x), mix(v2, v3, a.x), a.y);
 }
@@ -96,16 +92,16 @@ float PerlinNoise3D(vec3 p) {
     vec3 grid0 = floor(p);
     vec3 grid1 = grid0 + 1.0;
 
-    float v0 = LocalDisplacement3D(vec3(grid0.x, grid0.y, grid0.z), p);
-    float v1 = LocalDisplacement3D(vec3(grid1.x, grid0.y, grid0.z), p);
-    float v2 = LocalDisplacement3D(vec3(grid0.x, grid1.y, grid0.z), p);
-    float v3 = LocalDisplacement3D(vec3(grid1.x, grid1.y, grid0.z), p);
-    float v4 = LocalDisplacement3D(vec3(grid0.x, grid0.y, grid1.z), p);
-    float v5 = LocalDisplacement3D(vec3(grid1.x, grid0.y, grid1.z), p);
-    float v6 = LocalDisplacement3D(vec3(grid0.x, grid1.y, grid1.z), p);
-    float v7 = LocalDisplacement3D(vec3(grid1.x, grid1.y, grid1.z), p);
+    float v0 = LocalDisplacement(vec3(grid0.x, grid0.y, grid0.z), p);
+    float v1 = LocalDisplacement(vec3(grid1.x, grid0.y, grid0.z), p);
+    float v2 = LocalDisplacement(vec3(grid0.x, grid1.y, grid0.z), p);
+    float v3 = LocalDisplacement(vec3(grid1.x, grid1.y, grid0.z), p);
+    float v4 = LocalDisplacement(vec3(grid0.x, grid0.y, grid1.z), p);
+    float v5 = LocalDisplacement(vec3(grid1.x, grid0.y, grid1.z), p);
+    float v6 = LocalDisplacement(vec3(grid0.x, grid1.y, grid1.z), p);
+    float v7 = LocalDisplacement(vec3(grid1.x, grid1.y, grid1.z), p);
 
-    vec3 a = QuinticInterpolation3D(fract(p));
+    vec3 a = QuinticInterpolation(fract(p));
     const float SCALE = 2.0 / sqrt(3.0);
 
     return SCALE * mix(
