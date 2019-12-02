@@ -85,16 +85,17 @@ float altitude(vec3 p) {
 }
 
 vec3 gradient(vec3 p, float eps) {
-    float a0 = altitude(p);
-    float ax = altitude(p + vec3(eps, 0.0, 0.0));
-    float az = altitude(p + vec3(0.0, 0.0, eps));
-    float dax = (ax - a0) / eps;
-    float daz = (az - a0) / eps;
-    return normalize(vec3(
-        sign(dax) * sqrt(dax * dax + 1.0),
-        1.0,
-        sign(daz) * sqrt(daz * daz + 1.0)
-    ));
+    vec3 p1 = p + vec3(-eps * 0.5, 0.0, 0.0);
+    vec3 p2 = p + vec3( eps * 0.5, 0.0, 0.0);
+    vec3 p3 = p + vec3(0.0, 0.0, -eps * 0.5);
+    vec3 p4 = p + vec3(0.0, 0.0,  eps * 0.5);
+    float h1 = heightMap(p1.xz);
+    float h2 = heightMap(p2.xz);
+    float h3 = heightMap(p3.xz);
+    float h4 = heightMap(p4.xz);
+    vec3 n = cross(vec3(p2.x - p1.x, h2 - h1, p2.z - p1.z),
+                   vec3(p4.x - p3.x, h4 - h3, p4.z - p3.z));
+    return normalize(-n);
 }
 
 float castRay(vec3 cameraPos, vec3 rayDir) {
