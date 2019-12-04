@@ -11,7 +11,7 @@ async function downloadText(url) {
 
 async function newShaderMaterial(uTime, uResolution) {
     var vertexShader = await downloadText("/shaders/basic.vert");
-    var fragmentShader = await downloadText("/shaders/noise.frag");
+    var fragmentShader = await downloadText("/shaders/wave.frag");
 
     const uniforms = {
         uResolution: uResolution,

@@ -186,7 +186,7 @@ void main() {
     //float r = PerlinNoise2D(st * 10.0) * 0.5 + 0.5;
     //vec3 p = RotateXMatrix(1.0) * vec3(st * 5.0, uTime * 1.0);
     //float r = PerlinNoise3D(p) * 0.8 + 0.6;
-    float r = hash31(vec3(st * 10.0, uTime)) * 0.5 + 0.5;
+    float r = hash31(vec3(st * 0.1, uTime));
 
     vec3 albedo = vec3(1.0, 1.0, 1.0);
     vec3 srgb = LinearToSRGB(albedo * r);
