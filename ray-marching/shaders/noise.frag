@@ -14,6 +14,32 @@ uniform float uTime;
 
 out vec4 out_FragColor;
 
+// http://www.isthe.com/chongo/tech/comp/fnv/index.html
+uint FNV_1a(uint src1, uint src2) {
+    const uint offsetBias = 2166136261u;
+    const uint prime = 16777619u;
+
+    uint hash = offsetBias;
+    #define FNV_ROUND(src, i) \
+        hash ^= (src >> (8*i)) & 0xFFu; \
+        hash *= prime;
+    #define FNV_HASH_UINT(src) \
+        FNV_ROUND(src, 0) \
+        FNV_ROUND(src, 1) \
+        FNV_ROUND(src, 2) \
+        FNV_ROUND(src, 3)
+    FNV_HASH_UINT(src1)
+    FNV_HASH_UINT(src2)
+    #undef FNV_HASH_UINT
+    #undef FNV_ROUND
+    return hash;
+}
+
+float hash21(vec2 st) {
+    uint h = FNV_1a(floatBitsToUint(st.x), floatBitsToUint(st.y));
+    return float(h) / 4294967295.0;
+}
+
 float Noise21(vec2 st) {
     float t = dot(st, vec2(12.9898, 78.233));
     return fract(sin(t) * 43758.5453123);
@@ -130,8 +156,9 @@ void main() {
     vec2 st = (gl_FragCoord.xy * 2.0 - uResolution) / uResolution;
 
     //float r = PerlinNoise2D(st * 10.0) * 0.5 + 0.5;
-    vec3 p = RotateXMatrix(1.0) * vec3(st * 5.0, uTime * 1.0);
-    float r = PerlinNoise3D(p) * 0.8 + 0.6;
+    //vec3 p = RotateXMatrix(1.0) * vec3(st * 5.0, uTime * 1.0);
+    //float r = PerlinNoise3D(p) * 0.8 + 0.6;
+    float r = hash21(st * 10.0) * 0.5 + 0.5;
 
     vec3 albedo = vec3(1.0, 1.0, 1.0);
     vec3 srgb = LinearToSRGB(albedo * r);
