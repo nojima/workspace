@@ -52,6 +52,12 @@ end
 
 def main
   puts "// Hash Functions"
+  puts "//"
+  puts "// murmurHashNM() takes M unsigned integers and returns N hash values."
+  puts "// The returned values are unsigned integers between 0 and 2^32 - 1."
+  puts "//"
+  puts "// hashNM() takes M floating point numbers and returns N hash values."
+  puts "// The returned values are floating point numbers between 0.0 and 1.0."
   puts
   (1..4).each do |out_dim|
     (1..4).each do |in_dim|

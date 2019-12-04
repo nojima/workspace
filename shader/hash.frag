@@ -1,4 +1,10 @@
 // Hash Functions
+//
+// murmurHashNM() takes M unsigned integers and returns N hash values.
+// The returned values are unsigned integers between 0 and 2^32 - 1.
+//
+// hashNM() takes M floating point numbers and returns N hash values.
+// The returned values are floating point numbers between 0.0 and 1.0.
 
 //------------------------------------------------------------------------------
 
