@@ -57,6 +57,16 @@ uint FNV_1a(uint src1, uint src2, uint src3) {
     return hash;
 }
 
+uint MurmurHash2(uint src1, uint src2, uint src3, uint seed) {
+    const uint M = 0x5bd1e995u;
+    uint h = seed^12u;
+    #define MIX(k) k *= M; k ^= k>>24u; k *= M; h *= M; h ^= k;
+    MIX(src1) MIX(src2) MIX(src3)
+    #undef MIX
+    h ^= h>>13u; h *= M; h ^= h>>15u;
+    return h;
+}
+
 float hash21(vec2 st) {
     uint h = FNV_1a(floatBitsToUint(st.x), floatBitsToUint(st.y));
     return float(h) / 4294967295.0;
@@ -64,7 +74,7 @@ float hash21(vec2 st) {
 
 float hash31(vec3 st) {
     uvec3 u = floatBitsToUint(st);
-    uint h = FNV_1a(u.x, u.y, u.z);
+    uint h = MurmurHash2(u.x, u.y, u.z, 0xdeadbeefu);
     return float(h) / 4294967295.0;
 }
 
