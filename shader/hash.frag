@@ -4,7 +4,7 @@
 
 uint murmurHash11(uint src) {
     const uint M = 0x5bd1e995u;
-    uint h = uint(1190494759u);
+    uint h = 1190494759u;
     src *= M; src ^= src>>24u; src *= M;
     h *= M; h ^= src;
     h ^= h>>13u; h *= M; h ^= h>>15u;
@@ -21,7 +21,7 @@ float hash11(float src) {
 
 uint murmurHash12(uvec2 src) {
     const uint M = 0x5bd1e995u;
-    uint h = uint(1190494759u);
+    uint h = 1190494759u;
     src *= M; src ^= src>>24u; src *= M;
     h *= M; h ^= src.x; h *= M; h ^= src.y;
     h ^= h>>13u; h *= M; h ^= h>>15u;
@@ -38,7 +38,7 @@ float hash12(vec2 src) {
 
 uint murmurHash13(uvec3 src) {
     const uint M = 0x5bd1e995u;
-    uint h = uint(1190494759u);
+    uint h = 1190494759u;
     src *= M; src ^= src>>24u; src *= M;
     h *= M; h ^= src.x; h *= M; h ^= src.y; h *= M; h ^= src.z;
     h ^= h>>13u; h *= M; h ^= h>>15u;
@@ -55,7 +55,7 @@ float hash13(vec3 src) {
 
 uint murmurHash14(uvec4 src) {
     const uint M = 0x5bd1e995u;
-    uint h = uint(1190494759u);
+    uint h = 1190494759u;
     src *= M; src ^= src>>24u; src *= M;
     h *= M; h ^= src.x; h *= M; h ^= src.y; h *= M; h ^= src.z; h *= M; h ^= src.w;
     h ^= h>>13u; h *= M; h ^= h>>15u;

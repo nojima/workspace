@@ -17,11 +17,12 @@ end
 def murmur_hash_code(in_dim, out_dim)
   seeds = [1190494759, 2147483647, 3559788179, 179424673]
   seed_vec = seeds.take(out_dim).map{|seed| "#{seed}u"}.join(", ")
+  seed_vec = "#{uvec(out_dim)}(#{seed_vec})" if out_dim > 1
 
   code1 = <<~EOS
   #{uvec(out_dim)} murmurHash#{out_dim}#{in_dim}(#{uvec(in_dim)} src) {
       const uint M = 0x5bd1e995u;
-      #{uvec(out_dim)} h = #{uvec(out_dim)}(#{seed_vec});
+      #{uvec(out_dim)} h = #{seed_vec};
       src *= M; src ^= src>>24u; src *= M;
   EOS
 
