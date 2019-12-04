@@ -12,21 +12,18 @@ uniform float uTime;
 
 out vec4 out_FragColor;
 
-// Fowler-Noll-Vo hash function
-// http://www.isthe.com/chongo/tech/comp/fnv/
-uint FNV_1a(uint src1, uint src2) {
-    uint hash = 2166136261u;
-    #define FNV_BYTE(src, i) hash ^= (src >> (8*i)) & 0xffu; hash *= 16777619u;
-    #define FNV_UINT(src) FNV_BYTE(src, 0) FNV_BYTE(src, 1) FNV_BYTE(src, 2) FNV_BYTE(src, 3)
-    FNV_UINT(src1) FNV_UINT(src2)
-    #undef FNV_UINT
-    #undef FNV_BYTE
-    return hash;
+uint murmurHash12(uvec2 src) {
+    const uint M = 0x5bd1e995u;
+    uint h = 1190494759u;
+    src *= M; src ^= src>>24u; src *= M;
+    h *= M; h ^= src.x; h *= M; h ^= src.y;
+    h ^= h>>13u; h *= M; h ^= h>>15u;
+    return h;
 }
 
-float hash(vec2 p) {
-    uint h = FNV_1a(floatBitsToUint(p.x), floatBitsToUint(p.y));
-    return float(h) / 4294967295.0;
+float hash(vec2 src) {
+    uint h = murmurHash12(floatBitsToUint(src));
+    return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0;
 }
 
 vec2 cubicHermineCurve(vec2 x) {
