@@ -26,6 +26,10 @@ float hash(vec2 src) {
     return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0;
 }
 
+float cubicHermineCurve(float x) {
+    return x * x * (3.0 - 2.0 * x);
+}
+
 vec2 cubicHermineCurve(vec2 x) {
     return x * x * (3.0 - 2.0 * x);
 }
@@ -49,11 +53,6 @@ float valueNoise(vec2 p) {
 
     float v = mix(mix(v0, v1, u.x), mix(v2, v3, u.x), u.y);
     return v * 2.0 - 1.0;
-}
-
-vec3 renderSky(vec3 eye) {
-    float h = 1.0 - max(eye.y, 0.0);
-    return vec3(h * h, h, 0.6 + 0.4 * h);
 }
 
 float wave(vec2 coord, float choppy) {
@@ -94,17 +93,16 @@ float altitude(vec3 p) {
 }
 
 vec3 gradient(vec3 p, float eps) {
-    vec3 p1 = p + vec3(-eps * 0.5, 0.0, 0.0);
-    vec3 p2 = p + vec3( eps * 0.5, 0.0, 0.0);
-    vec3 p3 = p + vec3(0.0, 0.0, -eps * 0.5);
-    vec3 p4 = p + vec3(0.0, 0.0,  eps * 0.5);
-    float h1 = heightMap(p1.xz);
-    float h2 = heightMap(p2.xz);
-    float h3 = heightMap(p3.xz);
-    float h4 = heightMap(p4.xz);
-    vec3 n = cross(vec3(p2.x - p1.x, h2 - h1, p2.z - p1.z),
-                   vec3(p4.x - p3.x, h4 - h3, p4.z - p3.z));
-    return normalize(-n);
+    float a0 = altitude(p);
+    float ax = altitude(p + vec3(eps, 0.0, 0.0));
+    float az = altitude(p + vec3(0.0, 0.0, eps));
+    float dax = (ax - a0) / eps;
+    float daz = (az - a0) / eps;
+    return normalize(vec3(
+        sign(ax) * sqrt(dax * dax + 1.0),
+        1.0,
+        sign(az) * sqrt(daz * daz + 1.0)
+    ));
 }
 
 float castRay(vec3 cameraPos, vec3 rayDir) {
@@ -138,40 +136,59 @@ float fresnel(float cosine, float f0) {
     return f0 + (1.0 - f0) * pow(1.0 - cosine, 5.0);
 }
 
-vec3 diffuse(vec3 normal, vec3 light) {
+vec3 diffuse(vec3 normal, vec3 light, float lightIntensity) {
+    // Half Lambert
     const vec3 albedo = vec3(0.8, 0.9, 0.6);
-    return dot(normal, light) * albedo / PI;
+    float NL = dot(normal, light) * 0.5 + 0.5;
+    return NL * NL * albedo * lightIntensity / PI;
 }
 
-float specular(vec3 normal, vec3 light, vec3 eye) {
-    const float shininess = 30.0;
+float specular(vec3 normal, vec3 light, float lightIntensity, vec3 eye) {
+    const float shininess = 10.0;
     vec3 reflectionDir = -reflect(light, normal);
     float d = max(dot(reflectionDir, -eye), 0.0);
-    return (shininess + 1.0) * pow(d, shininess) / (2.0 * PI);
+    return (shininess + 1.0) * pow(d, shininess) * lightIntensity / (2.0 * PI);
 }
 
-vec3 fog(vec3 baseColor, vec3 fogColor, float depth) {
-    float alpha = exp(-depth * 0.005);
-    return mix(fogColor, baseColor, alpha);
+vec3 fog(vec3 baseColor, vec3 fogColor, float depth, float maxDepth) {
+    const float fogDensity = 10.0;
+    float d = depth / maxDepth;
+    float alpha = exp(-d * fogDensity);
+    return mix(fogColor, baseColor, pow(alpha, 0.2));
 }
 
-vec3 renderSea(vec3 p, vec3 normal, vec3 light, vec3 eye, float depth) {
-    float fr = fresnel(max(dot(normal, -eye), 0.0), 0.4);
-
-    vec3 reflected = renderSky(reflect(eye, normal));
-    vec3 refracted = vec3(0.0, 0.1, 0.3) + diffuse(normal, light);
-
+vec3 renderSky(vec3 eye, vec3 light, float lightIntensity) {
     vec3 color = vec3(0.0, 0.0, 0.0);
-    color += mix(refracted, reflected, fr);
-    color += fr * specular(normal, light, eye);
+    // Rayleigh Scattering
+    float cos_theta = dot(-eye, light);
+    float rayleighPhase = (3.0 / (16.0 * PI)) * (1.0 + cos_theta * cos_theta);
+    vec3 rayleighDepth = exp(vec3(0.596, 1.324, 3.310));
+    color += rayleighPhase * rayleighDepth * lightIntensity;
+    // Mie Scattering
+    float miePhase = (1.0 / (4.0 * PI)) * (0.5 + 4.5 * pow(0.5 * (1.0 + cos_theta), 8.0));
+    vec3 mieDepth = vec3(1.0, 1.0, 1.0) * exp(2.5);
+    color += miePhase * mieDepth * lightIntensity;
+    return color;
+}
 
-    return fog(color, vec3(1.0, 1.0, 1.0), depth);
+vec3 renderSea(vec3 p, vec3 normal, vec3 light, float lightIntensity, vec3 eye, float depth, vec3 skyColor) {
+    vec3 color = vec3(0.0, 0.0, 0.0);
+    // Reflection of sky color
+    float fr1 = fresnel(max(dot(normal, -eye), 0.0), 0.2);
+    color += fr1 * renderSky(reflect(eye, normal), light, lightIntensity);
+    // Color of water
+    color += diffuse(normal, light, lightIntensity);
+    // Reflection of sun light
+    float fr2 = fresnel(max(dot(normal, light), 0.0), 0.2);
+    color += fr2 * specular(normal, light, lightIntensity, eye);
+    return color;
 }
 
 vec3 render(vec2 coord) {
-    const vec3 light = normalize(vec3(1.0, 1.0, 0.5));
+    const vec3 light = normalize(vec3(0.0, 0.8, -0.6));
+    const float lightIntensity = 1.0;
     vec3 cameraPos = vec3(0.0, 3.5, 5.0);
-    vec3 rayDir = normalize(vec3(coord, 0.0) + vec3(0.0, -0.5, -2.0));
+    vec3 rayDir = normalize(vec3(coord, 0.0) + vec3(0.0, 0.0, -2.0));
 
     float depth = castRay(cameraPos, rayDir);
     vec3 surfacePos = cameraPos + rayDir * depth;
@@ -179,10 +196,10 @@ vec3 render(vec2 coord) {
     float eps = (depth + 1.0) * 0.05 / min(uResolution.x, uResolution.y);
     vec3 normal = gradient(surfacePos, eps);
 
-    vec3 seaColor = renderSea(surfacePos, normal, light, rayDir, depth);
-    vec3 skyColor = renderSky(rayDir);
+    vec3 skyColor = renderSky(rayDir, light, lightIntensity);
+    vec3 seaColor = renderSea(surfacePos, normal, light, lightIntensity, rayDir, depth, skyColor);
 
-    return mix(seaColor, skyColor, depth / 1000.0);
+    return fog(seaColor, skyColor, depth, 1000.0);
 }
 
 vec3 sRGB(vec3 linearColor) {
