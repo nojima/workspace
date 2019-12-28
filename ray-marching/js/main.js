@@ -32,7 +32,7 @@ async function main() {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("webgl2", { alpha: false });
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, context: context });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(1280, 720);
     renderer.setClearColor(0x333333, 1);
     renderer.gammaInput = true;
     renderer.gammaOutput = true;
