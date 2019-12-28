@@ -11,7 +11,7 @@ async function downloadText(url) {
 
 async function newShaderMaterial(uTime, uResolution) {
     var vertexShader = await downloadText("/shaders/basic.vert");
-    var fragmentShader = await downloadText("/shaders/wave.frag");
+    var fragmentShader = await downloadText("/shaders/cloud.frag");
 
     const uniforms = {
         uResolution: uResolution,
@@ -34,9 +34,6 @@ async function main() {
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, context: context });
     renderer.setSize(1280, 720);
     renderer.setClearColor(0x333333, 1);
-    renderer.gammaInput = true;
-    renderer.gammaOutput = true;
-    renderer.gammaFactor = 2.2;
     document.body.appendChild(renderer.domElement);
 
     const uTime = new THREE.Uniform(0.0);
