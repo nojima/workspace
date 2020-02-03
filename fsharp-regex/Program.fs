@@ -12,9 +12,9 @@
         | Empty ->
             seq { 0 }
         | Char ch ->
-            if s.Length > 0 && s.Chars(0) = ch then seq { 1 } else Seq.empty
+            if s.StartsWith ch then seq { 1 } else Seq.empty
         | AnyChar ->
-            if s.Length > 0 then seq { 1 } else Seq.empty
+            if s <> "" then seq { 1 } else Seq.empty
         | Repeat inner ->
             seq {
                 for n1 in matchHead inner s do
