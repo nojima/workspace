@@ -1,89 +1,82 @@
 module Main exposing (main)
 
 import Browser
-import Html
-import Html.Attributes as Attr
-import Html.Events as Events
-import Http
-import Json.Decode as Decode
+import Browser.Navigation as Nav
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Url
+
+-- MAIN
 
 main : Program () Model Msg
-main = Browser.element
-  { init = init
-  , update = update
-  , subscriptions = subscriptions
-  , view = view
-  }
-
--- Model
-type Model
-  = Failure
-  | Loading
-  | Success String
-
-init : () -> (Model, Cmd Msg)
-init _ =
-  (Loading, getRandomCatGif)
-
--- Update
-type Msg
-  = MorePlease
-  | GotGif (Result Http.Error String)
-
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg _ =
-  case msg of
-    MorePlease ->
-      (Loading, getRandomCatGif)
-
-    GotGif result ->
-      case result of
-        Ok url ->
-          (Success url, Cmd.none)
-        Err _ ->
-          (Failure, Cmd.none)
-
--- Subscriptions
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-  Sub.none
-
--- View
-view : Model -> Html.Html Msg
-view model =
-  Html.div []
-    [ Html.h2 [] [ Html.text "Random Cats" ]
-    , viewGif model
-    ]
-
-viewGif : Model -> Html.Html Msg
-viewGif model =
-  case model of
-    Failure ->
-      Html.div []
-        [ Html.text "I cloud not load a random cat for some reason."
-        , Html.button [ Events.onClick MorePlease ]
-            [ Html.text "Try Again!" ]
-        ]
-
-    Loading ->
-      Html.text "Loading..."
-
-    Success url ->
-      Html.div []
-        [ Html.button [ Events.onClick MorePlease, Attr.style "display" "block" ]
-            [ Html.text "More Please!" ]
-        , Html.img [ Attr.src url ] []
-        ]
-
-  -- HTTP
-getRandomCatGif : Cmd Msg
-getRandomCatGif =
-  Http.get
-    { url = "https://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&tag=cat"
-    , expect = Http.expectJson GotGif gifDecoder
+main =
+  Browser.application
+    { init = init
+    , view = view
+    , update = update
+    , subscriptions = subscriptions
+    , onUrlChange = UrlChanged
+    , onUrlRequest = LinkClicked
     }
 
-gifDecoder : Decode.Decoder String
-gifDecoder =
-  Decode.field "data" (Decode.field "image_url" Decode.string)
+-- MODEL
+
+type alias Model =
+  { key : Nav.Key
+  , url : Url.Url
+  }
+
+init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init _ url key =
+  ( Model key url, Cmd.none )
+
+-- UPDATE
+
+type Msg
+  = LinkClicked Browser.UrlRequest
+  | UrlChanged Url.Url
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+  case msg of
+    LinkClicked urlRequest ->
+      case urlRequest of
+        Browser.Internal url ->
+          ( model, Nav.pushUrl model.key (Url.toString url) )
+        
+        Browser.External href ->
+          ( model, Nav.load href )
+      
+    UrlChanged url ->
+      ( { model | url = url }
+      , Cmd.none
+      )
+
+-- SUBSCRIPTIONS
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
+
+-- VIEW
+
+view : Model -> Browser.Document Msg
+view model =
+  { title = "URL Interceptor"
+  , body =
+      [ text "The current URL is: "
+      , b [] [ text (Url.toString model.url) ]
+      , ul []
+          [ viewLink "/home"
+          , viewLink "/profile"
+          , viewLink "/reviews/the-century-of-the-self"
+          , viewLink "/reviews/public-opinion"
+          , viewLink "/reviews/shah-of-shahs"
+          , viewLink "https://example.com/"
+          ]
+      ]
+  }
+
+viewLink : String -> Html Msg
+viewLink path =
+  li [] [ a [ href path ] [ text path ] ]
