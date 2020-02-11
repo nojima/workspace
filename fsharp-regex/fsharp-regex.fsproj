@@ -8,6 +8,10 @@
 
   <ItemGroup>
     <Compile Include="Program.fs" />
+    <Compile Include="Test.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Expecto" Version="8.13.1" />
+  </ItemGroup>
 </Project>
