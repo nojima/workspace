@@ -1,31 +1,89 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html, button, div, text)
-import Html.Events exposing (onClick)
+import Html
+import Html.Attributes as Attr
+import Html.Events as Events
+import Http
+import Json.Decode as Decode
 
-main = Browser.sandbox { init = init, update = update, view = view }
+main : Program () Model Msg
+main = Browser.element
+  { init = init
+  , update = update
+  , subscriptions = subscriptions
+  , view = view
+  }
 
 -- Model
-type alias Model = Int
+type Model
+  = Failure
+  | Loading
+  | Success String
 
-init : Model
-init = 0
+init : () -> (Model, Cmd Msg)
+init _ =
+  (Loading, getRandomCatGif)
 
 -- Update
-type Msg = Increment | Decrement
+type Msg
+  = MorePlease
+  | GotGif (Result Http.Error String)
 
-update : Msg -> Model -> Model
-update msg model =
-    case msg of
-        Increment -> model + 1
-        Decrement -> model - 1
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg _ =
+  case msg of
+    MorePlease ->
+      (Loading, getRandomCatGif)
+
+    GotGif result ->
+      case result of
+        Ok url ->
+          (Success url, Cmd.none)
+        Err _ ->
+          (Failure, Cmd.none)
+
+-- Subscriptions
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+  Sub.none
 
 -- View
-view : Model -> Html Msg
+view : Model -> Html.Html Msg
 view model =
-    div []
-        [ button [ onClick Decrement ] [ text "-" ]
-        , div [] [ text (String.fromInt model) ]
-        , button [ onClick Increment ] [ text "+" ]
+  Html.div []
+    [ Html.h2 [] [ Html.text "Random Cats" ]
+    , viewGif model
+    ]
+
+viewGif : Model -> Html.Html Msg
+viewGif model =
+  case model of
+    Failure ->
+      Html.div []
+        [ Html.text "I cloud not load a random cat for some reason."
+        , Html.button [ Events.onClick MorePlease ]
+            [ Html.text "Try Again!" ]
         ]
+
+    Loading ->
+      Html.text "Loading..."
+
+    Success url ->
+      Html.div []
+        [ Html.button [ Events.onClick MorePlease, Attr.style "display" "block" ]
+            [ Html.text "More Please!" ]
+        , Html.img [ Attr.src url ] []
+        ]
+
+  -- HTTP
+getRandomCatGif : Cmd Msg
+getRandomCatGif =
+  Http.get
+    { url = "https://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&tag=cat"
+    , expect = Http.expectJson GotGif gifDecoder
+    }
+
+gifDecoder : Decode.Decoder String
+gifDecoder =
+  Decode.field "data" (Decode.field "image_url" Decode.string)
