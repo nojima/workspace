@@ -81,9 +81,33 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "URL Interceptor"
     , body =
-        [ text "The current URL is: "
-        , b [] [ text (Url.toString model.url) ]
-        , ul []
+        pageContainer
+            [ mainHeader model
+            , mainContents
+            ]
+    }
+
+
+pageContainer : List (Html Msg) -> List (Html Msg)
+pageContainer contents =
+    [ div [ class "container" ] contents ]
+
+
+mainHeader : Model -> Html Msg
+mainHeader model =
+    header []
+        [ h1 [] [ text "URL Interceptor" ]
+        , p []
+            [ text "The current URL is: "
+            , b [] [ text (Url.toString model.url) ]
+            ]
+        ]
+
+
+mainContents : Html Msg
+mainContents =
+    main_ []
+        [ ul []
             [ viewLink "/home"
             , viewLink "/profile"
             , viewLink "/reviews/the-century-of-the-self"
@@ -92,7 +116,6 @@ view model =
             , viewLink "https://example.com/"
             ]
         ]
-    }
 
 
 viewLink : String -> Html Msg
