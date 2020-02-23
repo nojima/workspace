@@ -1,0 +1,71 @@
+@import url("reset.css");
+
+body {
+    padding: 2em;
+    width: 720px;
+    margin: 0 auto;
+}
+
+.tableview {
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid #999;
+
+    --tableview_padding: 1em;
+}
+.tableview_item {
+    padding: var(--tableview_padding);
+    background-color: #DDD;
+}
+.tableview_item + .tableview_item {
+    border-top: 1px solid #EEE;
+}
+.tableview_target {
+    display: block;
+    margin: calc(-1 * var(--tableview_padding));
+    padding: var(--tableview_padding);
+    text-decoration: none;
+    position: relative;
+    padding-right: 2.4em;
+}
+.tableview_target:after {
+    display: inline-block;
+    content: "▶";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0.6em;
+    margin: auto;
+    height: 1em;
+    color: #999;
+}
+
+.grid {
+    margin-left: -5px;
+    margin-right: -5px;
+}
+.grid > div {
+    background-color: #5A9;
+}
+.grid:after {
+    content: "";
+    display: block;
+    clear: both;
+}
+.grid_item {
+    float: left;
+    box-sizing: border-box;
+}
+.grid_item > div {
+    background-color: #489;
+}
+.grid_item_3 {
+    width: 25%;
+}
+.grid_item_4 {
+    width: 33.333%;
+}
+.has_gutter {
+    padding-left: 5px;
+    padding-right: 5px;
+}
