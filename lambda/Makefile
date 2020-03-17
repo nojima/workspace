@@ -1,5 +1,7 @@
-Lambda.exe: Main.hs Lambda.hs
-	stack ghc -- -o $@ $<
+SOURCES=$(wildcard *.hs)
+
+Lambda.exe: $(SOURCES) Makefile
+	stack ghc -- -O -o $@ $(SOURCES)
 
 run: Lambda.exe
 	./Lambda.exe

@@ -6,7 +6,6 @@ module Lambda
     where
 
 import qualified Data.Either as Either
-import Data.Functor ((<&>))
 
 data Term
     = TrueTerm Location
@@ -58,8 +57,10 @@ evalOne term
                 FalseTerm _ ->
                     Right elseTerm
                 _ ->
-                    evalOne condTerm
-                    <&> \condTerm' -> IfTerm loc condTerm' thenTerm elseTerm
+                    IfTerm loc
+                        <$> evalOne condTerm
+                        <*> pure thenTerm
+                        <*> pure elseTerm
 
         SuccTerm loc inner ->
             SuccTerm loc <$> evalOne inner
