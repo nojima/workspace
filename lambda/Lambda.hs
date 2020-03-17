@@ -3,6 +3,7 @@ module Lambda
     ( Term(..)
     , Location(..)
     , eval
+    , evalOne
     )
     where
 
@@ -28,7 +29,7 @@ dummyLocation :: Location
 dummyLocation = Location 0
 
 data EvalError
-    = EvalError String
+    = EvalError Location String
     deriving (Show)
 
 type Result a
@@ -49,6 +50,17 @@ isValue term =
         FalseTerm _ -> True
         _ -> isNumericValue term
 -}
+
+getLocation :: Term -> Location
+getLocation term =
+    case term of
+        TrueTerm loc     -> loc
+        FalseTerm loc    -> loc
+        IfTerm loc _ _ _ -> loc
+        ZeroTerm loc     -> loc
+        SuccTerm loc _   -> loc
+        PredTerm loc _   -> loc
+        IsZeroTerm loc _ -> loc
 
 evalOne :: Term -> Result Term
 evalOne term =
@@ -87,7 +99,7 @@ evalOne term =
                     IsZeroTerm loc <$> evalOne inner
 
         _ ->
-            Left (EvalError "no rule applies")
+            Left $ EvalError (getLocation term) "no rule applies"
 
 eval :: Term -> Term
 eval term =

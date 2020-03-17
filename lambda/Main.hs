@@ -10,6 +10,8 @@ main =
         one = SuccTerm (Location 2) zero
         true = (TrueTerm (Location 3))
         if_ = IfTerm (Location 3) true one zero
-        ret = eval if_
     in
-    putStrLn (show ret)
+    do
+        putStrLn $ show $ evalOne zero
+        putStrLn $ show $ evalOne if_
+        putStrLn $ show $ eval if_
