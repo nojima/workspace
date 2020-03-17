@@ -35,24 +35,24 @@ type Result a
     = Either EvalError a
 
 isNumericValue :: Term -> Bool
-isNumericValue term
-    = case term of
+isNumericValue term =
+    case term of
         ZeroTerm _ -> True
         SuccTerm _ term' -> isNumericValue term'
         _ -> False
 
 {-
 isValue :: Term -> Bool
-isValue term
-    = case term of
+isValue term =
+    case term of
         TrueTerm _ -> True
         FalseTerm _ -> True
         _ -> isNumericValue term
 -}
 
 evalOne :: Term -> Result Term
-evalOne term
-    = case term of
+evalOne term =
+    case term of
         IfTerm loc condTerm thenTerm elseTerm ->
             case condTerm of
                 TrueTerm _ ->
