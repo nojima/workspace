@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall -Werror #-}
 module Main(main) where
 
 import Lambda

@@ -1,3 +1,4 @@
+{-# OPTIONS -Wall -Werror #-}
 module Lambda
     ( Term(..)
     , Location(..)
@@ -5,7 +6,7 @@ module Lambda
     )
     where
 
-import qualified Data.Either as Either
+import Data.Either()
 
 data Term
     = TrueTerm Location
@@ -40,12 +41,14 @@ isNumericValue term
         SuccTerm _ term' -> isNumericValue term'
         _ -> False
 
+{-
 isValue :: Term -> Bool
 isValue term
     = case term of
         TrueTerm _ -> True
         FalseTerm _ -> True
         _ -> isNumericValue term
+-}
 
 evalOne :: Term -> Result Term
 evalOne term
