@@ -1,12 +1,13 @@
 SOURCES=$(wildcard *.hs)
+EXE=Lambda.exe
 
-Lambda.exe: $(SOURCES) Makefile
+$(EXE): $(SOURCES) Makefile
 	stack ghc -- -O -o $@ $(SOURCES)
 
-run: Lambda.exe
-	./Lambda.exe
+run: $(EXE)
+	./$(EXE)
 
 clean:
-	rm Lambda.exe
+	rm $(EXE) *.o
 
 .PHONY: run clean

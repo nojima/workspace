@@ -9,6 +9,8 @@ module Lambda
 
 import Data.Either()
 
+-------------------------------------------------------------------------------
+
 data Term
     = TrueTerm Location
     | FalseTerm Location
@@ -19,6 +21,8 @@ data Term
     | IsZeroTerm Location Term
     deriving (Show)
 
+-------------------------------------------------------------------------------
+
 data Location
     = Location Int
 
@@ -28,12 +32,14 @@ instance Show Location where
 dummyLocation :: Location
 dummyLocation = Location 0
 
-data EvalError
-    = EvalError Location String
-    deriving (Show)
+-------------------------------------------------------------------------------
 
 type Result a
     = Either EvalError a
+
+data EvalError
+    = EvalError Location String
+    deriving (Show)
 
 isNumericValue :: Term -> Bool
 isNumericValue term =
