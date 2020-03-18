@@ -1,15 +1,16 @@
 {-# OPTIONS -Wall -Werror #-}
 module Main(main) where
 
-import Lambda
+import Syntax
+import Eval
 
 main :: IO ()
 main =
     let
-        zero = ZeroTerm (Location 1)
-        one = SuccTerm (Location 2) zero
-        true = (TrueTerm (Location 3))
-        if_ = IfTerm (Location 3) true one zero
+        zero = Zero (Location 1)
+        one = Succ (Location 2) zero
+        true = (True_ (Location 3))
+        if_ = If (Location 3) true one zero
         ret = eval if_
     in
     putStrLn (show ret)
