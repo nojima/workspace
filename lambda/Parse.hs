@@ -2,88 +2,88 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Parse() where
 
-import Prelude hiding (map)
 import Data.Char(isSpace)
 import qualified Syntax
 import qualified Data.Maybe as Maybe
 import Data.Function((&))
+import Control.Applicative(Alternative, (<|>))
 import qualified Data.ByteString.Char8 as B
 
-type Parser a
-    = B.ByteString -> Maybe (a, B.ByteString)
+newtype Parser a =
+    Parser { runParser :: B.ByteString -> Maybe (a, B.ByteString) }
+
+instance Functor Parser where
+    fmap f (Parser parser) =
+        Parser $ \input ->
+            case parser input of
+                Nothing             -> Nothing
+                Just (a, remainder) -> Just (f a, remainder)
+
+instance Applicative Parser where
+    pure x =
+        Parser $ \input ->
+            Just (x, input)
+
+    (Parser pFunc) <*> (Parser pArg) =
+        Parser $ \input -> do
+            (func, remainder1) <- pFunc input
+            (arg, remainder2) <- pArg remainder1
+            return (func arg, remainder2)
+
+instance Alternative Parser where
+    (Parser p1) <|> (Parser p2) =
+        Parser $ \input ->
+            (p1 input) <|> (p2 input)
 
 loc :: Syntax.Location
 loc = Syntax.Location 0
 
 string :: B.ByteString -> Parser ()
 string str =
-    \input ->
+    Parser $ \input ->
         case B.stripPrefix str input of
             Nothing        -> Nothing
             Just remainder -> Just ((), remainder)
 
-oneOf :: [Parser a] -> Parser a
-oneOf parsers =
-    \input ->
-        parsers
-        & Maybe.mapMaybe ($ input)
-        & Maybe.listToMaybe
-
-bind :: Parser a -> (a -> Parser b) -> Parser b
-bind parser f =
-    \input ->
-        case parser input of
-            Nothing -> Nothing
-            Just (a, remainder) ->
-                (f a) remainder
-
-map :: (a -> b) -> Parser a -> Parser b
-map f parser =
-    \input ->
-        case parser input of
-            Nothing -> Nothing
-            Just (a, remainder) ->
-                Just (f a, remainder)
-
-unit :: a -> Parser a
-unit a =
-    \input -> Just (a, input)
-
 whitespace :: Parser ()
 whitespace =
-    \input ->
+    Parser $ \input ->
         let
             (spaces, remainder) = B.span isSpace input
         in
-        if B.null spaces then Nothing else Just ((), remainder)
+        if B.null spaces
+        then Nothing
+        else Just ((), remainder)
 
 term :: Parser Syntax.Term
 term =
-    oneOf
-        [ literalTrue
-        , literalFalse
-        , if_
-        ]
+    literalTrue
+    <|> literalFalse
+    <|> if_
 
 literalTrue :: Parser Syntax.Term
 literalTrue =
-    map (const $ Syntax.True_ loc) (string "true")
+    fmap (const $ Syntax.True_ loc) (string "true")
 
 literalFalse :: Parser Syntax.Term
 literalFalse =
-    map (const $ Syntax.False_ loc) (string "false")
+    fmap (const $ Syntax.False_ loc) (string "false")
 
 if_ :: Parser Syntax.Term
 if_ =
-    string "if"     `bind` \_ ->
-    whitespace      `bind` \_ ->
-    term            `bind` \condTerm ->
-    whitespace      `bind` \_ ->
-    string "then"   `bind` \_ ->
-    whitespace      `bind` \_ ->
-    term            `bind` \thenTerm ->
-    whitespace      `bind` \_ ->
-    string "else"   `bind` \_ ->
-    whitespace      `bind` \_ ->
-    term            `bind` \elseTerm ->
-    unit (Syntax.If loc condTerm thenTerm elseTerm)
+    let
+        f _ _ condTerm _ _ _ thenTerm _ _ _ elseTerm =
+            Syntax.If loc condTerm thenTerm elseTerm
+    in
+    f
+    <$> string "if"
+    <*> whitespace
+    <*> term
+    <*> whitespace
+    <*> string "then"
+    <*> whitespace
+    <*> term
+    <*> whitespace
+    <*> string "else"
+    <*> whitespace
+    <*> term
