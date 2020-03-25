@@ -1,0 +1,37 @@
+library:
+  source-dirs: src
+tests:
+  hello-parsec-test:
+    source-dirs: test
+    main: Spec.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - hello-parsec
+copyright: 2020 Author name here
+maintainer: example@example.com
+dependencies:
+- base >= 4.7 && < 5
+- megaparsec
+- text
+name: hello-parsec
+version: 0.1.0.0
+extra-source-files:
+- README.md
+- ChangeLog.md
+author: Author name here
+github: githubuser/hello-parsec
+license: BSD3
+executables:
+  hello-parsec-exe:
+    source-dirs: app
+    main: Main.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - hello-parsec
+description: Please see the README on GitHub at <https://github.com/githubuser/hello-parsec#readme>
