@@ -7,23 +7,20 @@ import Text.Megaparsec((<|>))
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as Lexer
+import Text.Megaparsec.Debug
 import Data.Text(Text)
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import Data.Void(Void)
 import qualified Control.Monad as Monad
 
 type Parser = Parsec.Parsec Void Text
 
--- if iszero 0 then true else false
-
-data Token
-    = KeywordIf
-    | KeywordThen
-    | KeywordElse
-    | KeywordIsZero
-    | KeywordTrue
-    | KeywordFalse
-    | IntegerToken Integer
+data Expr
+    = IntegerLiteral Integer
+    | TrueLiteral
+    | FalseLiteral
+    | IfExpr Expr Expr Expr
     deriving (Show, Eq)
 
 consumeSpace :: Parser ()
@@ -39,23 +36,56 @@ lexeme = Lexer.lexeme consumeSpace
 symbol :: Text -> Parser Text
 symbol = Lexer.symbol consumeSpace
 
-token :: Parser Token
-token = keywordToken <|> integerToken
+keyword :: Text -> Parser ()
+keyword kwd = dbg (T.unpack kwd) $
+    lexeme $ do
+        Monad.void (Char.string kwd)
+        Monad.void (Parsec.notFollowedBy Char.alphaNumChar)
 
-keywordToken :: Parser Token
-keywordToken =
+keywordIf :: Parser ()
+keywordIf = keyword "if"
+
+keywordThen :: Parser ()
+keywordThen = keyword "then"
+
+keywordElse :: Parser ()
+keywordElse = keyword "else"
+
+keywordIsZero :: Parser ()
+keywordIsZero = keyword "iszero"
+
+integerLiteral :: Parser Expr
+integerLiteral = dbg "integerLiteral" $
+    IntegerLiteral <$> lexeme Lexer.decimal
+
+trueLiteral :: Parser Expr
+trueLiteral = dbg "trueLiteral" $
+    TrueLiteral <$ keyword "true"
+
+falseLiteral :: Parser Expr
+falseLiteral = dbg "falseLiteral" $
+    FalseLiteral <$ keyword "false"
+
+ifExpr :: Parser Expr
+ifExpr =
+    IfExpr
+        <$  keywordIf
+        <*> expr
+        <*  keywordThen
+        <*> expr
+        <*  keywordElse
+        <*> expr
+
+expr :: Parser Expr
+expr =
     Parsec.choice
-        [ KeywordIf     <$ symbol "if"
-        , KeywordThen   <$ symbol "then"
-        , KeywordElse   <$ symbol "else"
-        , KeywordIsZero <$ symbol "iszero"
-        , KeywordTrue   <$ symbol "true"
-        , KeywordFalse  <$ symbol "false"
+        [ integerLiteral
+        , trueLiteral
+        , falseLiteral
+        , ifExpr
         ]
 
-integerToken :: Parser Token
-integerToken =
-    IntegerToken <$> lexeme Lexer.decimal
-
 main :: IO ()
-main = someFunc
+main = do
+    input <- TIO.getContents
+    Parsec.parseTest expr input
