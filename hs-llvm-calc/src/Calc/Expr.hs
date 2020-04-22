@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StrictData #-}
 module Calc.Expr
     ( Expr(..)
     , Operator(..)
@@ -9,8 +10,8 @@ import Calc.Pretty
 import qualified Data.Text as T
 
 data Expr
-    = IntLiteral !Integer
-    | BinOp !Operator !Expr !Expr
+    = IntLiteral Integer
+    | BinOp Operator Expr Expr
     deriving (Show, Eq)
 
 data Operator
