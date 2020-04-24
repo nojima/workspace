@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 25a1fca31fbd72bc2971111b55752787648ff1232c5fd0c1232922c3f356990c
+-- hash: 0b9845b80b4eed1b2a43290e4d29dc5bec5afee7e04267c1545dd11dfc200146
 
 name:           hs-llvm-calc
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Calc.Compile
       Calc.Expr
       Calc.Parse
       Calc.Pretty
