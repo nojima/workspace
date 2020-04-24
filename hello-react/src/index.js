@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import { List } from "immutable";
 import "./index.css";
 
 function Square(props) {
@@ -27,8 +28,8 @@ function calculateWinner(squares) {
     ];
     for (let i = 0; i < lines.length; i++) {
         const [a, b, c] = lines[i];
-        if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-            return squares[a];
+        if (squares.get(a) && squares.get(a) === squares.get(b) && squares.get(a) === squares.get(c)) {
+            return squares.get(a);
         }
     }
     return null;
@@ -38,16 +39,15 @@ class Board extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            squares: Array(9).fill(null),
+            squares: List(Array(9).fill(null)),
             turn: 'X',
         };
     }
 
     handleClick(i) {
-        const squares = this.state.squares.slice();
-        squares[i] = this.state.turn;
+        const squares = this.state.squares;
         this.setState({
-            squares: squares,
+            squares: squares.set(i, this.state.turn),
             turn: nextTurn(this.state.turn),
         });
     }
@@ -55,7 +55,7 @@ class Board extends React.Component {
     renderSquare(i) {
         return (
             <Square
-                value={this.state.squares[i]}
+                value={this.state.squares.get(i)}
                 onClick={() => this.handleClick(i)}
             />
         );
