@@ -8,7 +8,10 @@ ThisBuild / organizationName := "example"
 lazy val root = (project in file("."))
   .settings(
     name := "hello-akka-stream",
-    libraryDependencies += scalaTest % Test
+    libraryDependencies ++= Seq(
+      akka,
+      scalaTest % Test,
+    ),
   )
 
 // Uncomment the following for publishing to Sonatype.
