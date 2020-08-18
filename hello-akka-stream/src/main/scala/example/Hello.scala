@@ -12,9 +12,13 @@ import java.nio.file.Paths
 object Hello extends App {
   implicit val system = ActorSystem("QuickStart")
 
-  val source: Source[Int, NotUsed] = Source(1 to 100)
-  val done: Future[Done] = source.runForeach(i => println(i))
+  val factorials = Source(1 to 100).scan(BigInt(1))((acc, next) => acc * next)
+
+  val result = factorials
+    .zipWith(Source(0 to 100))((num, idx) => s"$idx! = $num")
+    .throttle(1, 1.second)
+    .runForeach(println)
 
   implicit val ec = system.dispatcher
-  done.onComplete(_ => system.terminate())
+  result.onComplete(_ => system.terminate())
 }
