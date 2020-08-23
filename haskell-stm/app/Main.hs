@@ -1,6 +1,5 @@
 module Main where
 
-import Control.Concurrent (forkIO)
 import Control.Concurrent.STM.TVar (TVar, newTVar, readTVar, writeTVar)
 import Control.Concurrent.Async (replicateConcurrently_)
 import Control.Monad.STM (STM, atomically)
