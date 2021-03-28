@@ -2,11 +2,15 @@ use mysql;
 use mysql::params;
 use mysql::prelude::*;
 
-pub struct Inventory {}
+pub trait Inventory {
+    fn add_items(&mut self, tx: &mut mysql::Transaction, amount: i64) -> crate::Result<()>;
+}
 
-impl Inventory {
+pub struct MySqlInventory {}
+
+impl Inventory for MySqlInventory {
     // アイテムを指定された量だけ追加する
-    pub fn add_items(&mut self, tx: &mut mysql::Transaction, amount: i64) -> crate::Result<()> {
+    fn add_items(&mut self, tx: &mut mysql::Transaction, amount: i64) -> crate::Result<()> {
         let user_id: i64 = 1;
         let item_id: i64 = 1;
         let stmt = "\

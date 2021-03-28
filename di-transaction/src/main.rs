@@ -15,8 +15,8 @@ fn main() -> Result<()> {
     let pool = mysql::Pool::new(url)?;
     let mut conn = pool.get_conn()?;
 
-    let mut inventory = Inventory{};
-    let mut wallet = Wallet{};
+    let mut inventory = MySqlInventory{};
+    let mut wallet = MySqlWallet{};
 
     purchase_item(&mut inventory, &mut wallet, &mut conn)?;
 

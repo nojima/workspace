@@ -3,11 +3,16 @@ use mysql::params;
 use mysql::prelude::*;
 use anyhow::anyhow;
 
-pub struct Wallet {}
+pub trait Wallet {
+    fn get_balance(&self, tx: &mut mysql::Transaction) -> crate::Result<i64>;
+    fn pay(&mut self, tx: &mut mysql::Transaction, amount: i64) -> crate::Result<()>;
+}
 
-impl Wallet {
+pub struct MySqlWallet {}
+
+impl Wallet for MySqlWallet {
     // 現在の残高を返す
-    pub fn get_balance(&self, tx: &mut mysql::Transaction) -> crate::Result<i64> {
+    fn get_balance(&self, tx: &mut mysql::Transaction) -> crate::Result<i64> {
         let user_id: i64 = 1;
         let query = "\
             SELECT `balance` \
@@ -21,7 +26,7 @@ impl Wallet {
     }
 
     // 残高を減らす
-    pub fn pay(&mut self, tx: &mut mysql::Transaction, amount: i64) -> crate::Result<()> {
+    fn pay(&mut self, tx: &mut mysql::Transaction, amount: i64) -> crate::Result<()> {
         let user_id: i64 = 1;
         let stmt = "\
             UPDATE `wallet` \

@@ -6,8 +6,8 @@ use anyhow::anyhow;
 
 // アイテムを購入する
 pub fn purchase_item(
-    inventory: &mut Inventory,
-    wallet: &mut Wallet,
+    inventory: &mut impl Inventory,
+    wallet: &mut impl Wallet,
     conn: &mut mysql::PooledConn
 ) -> crate::Result<()> {
 
