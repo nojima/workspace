@@ -1,9 +1,8 @@
 module AST.Syntax where
 
-import Data.Text (Text)
-import Data.Text qualified as Text
+import Data.ByteString.Char8 (ByteString)
 
-type Name = Text
+type Name = ByteString
 
 data Expr
   = Float    Double
