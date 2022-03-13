@@ -1,13 +1,11 @@
-mod parse;
-mod tokenize;
+mod parsers;
+mod json;
 
-use crate::parse::parse;
-use crate::tokenize::tokenize;
 use anyhow::Result;
 use std::io::{self, Write};
 
 fn print_prompt() -> io::Result<()> {
-    print!("expr> ");
+    print!("json> ");
     io::stdout().flush()?;
     Ok(())
 }
@@ -20,38 +18,15 @@ fn read_line() -> io::Result<Option<String>> {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Token {
-    Eof,
-    Integer(i64),
-    Plus,
-    Minus,
-    Asterisk,
-    Slash,
-    LeftParen,
-    RightParen,
-}
-
-impl Default for Token {
-    fn default() -> Self {
-        Token::Eof
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Node {
-    Integer(i64),
-    Add(Box<Node>, Box<Node>),
-    Sub(Box<Node>, Box<Node>),
-    Mul(Box<Node>, Box<Node>),
-    Div(Box<Node>, Box<Node>),
-}
-
 fn do_something(line: &str) -> Result<()> {
-    let tokens = tokenize(&line)?;
-    println!("Tokens: {:?}", tokens);
-    let node = parse(tokens.into_iter())?;
-    println!("AST: {:?}", node);
+    match crate::json::parse(line) {
+        Some(value) => {
+            print!("{:?}\n\n", value);
+        }
+        None => {
+            eprintln!("parse error");
+        }
+    }
     Ok(())
 }
 
