@@ -9,6 +9,6 @@
   "author": "Yusuke Nojima",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^9.1.1"
+    "electron": "^18.3.7"
   }
 }
