@@ -8,16 +8,28 @@ const MAX_IDENT_LEN: u64 = 256;
 const CODE_SUCCESS: u8 = 90;
 const CODE_FAILURE: u8 = 91;
 
-struct Handler {
-    client_read_timeout: Duration,
-    client_write_timeout: Duration,
-    upstream_connect_timeout: Duration,
-    upstream_read_timeout: Duration,
-    upstream_write_timeout: Duration,
+pub struct Handler {
+    pub client_read_timeout: Duration,
+    pub client_write_timeout: Duration,
+    pub upstream_connect_timeout: Duration,
+    pub upstream_read_timeout: Duration,
+    pub upstream_write_timeout: Duration,
+}
+
+impl Default for Handler {
+    fn default() -> Self {
+        Self {
+            client_read_timeout: Duration::from_secs(60),
+            client_write_timeout: Duration::from_secs(60),
+            upstream_connect_timeout: Duration::from_secs(10),
+            upstream_read_timeout: Duration::from_secs(60),
+            upstream_write_timeout: Duration::from_secs(60),
+        }
+    }
 }
 
 impl Handler {
-    fn handle(&self, mut client: TcpStream) -> io::Result<()> {
+    pub fn handle(&self, mut client: TcpStream) -> io::Result<()> {
         client.set_read_timeout(Some(self.client_read_timeout))?;
         client.set_write_timeout(Some(self.client_write_timeout))?;
         let mut client_reader = BufReader::new(client.try_clone()?);
