@@ -1,12 +1,17 @@
 use std::collections::HashMap;
-use std::io::{self, BufRead, BufReader, Read, Write, IoSlice};
+use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 
 const MAX_READ_SIZE: u64 = 1024;
 
+struct Item {
+    data: Vec<u8>,
+    flags: u32,
+}
+
 fn process_command(
-    db: &mut HashMap<String, Vec<u8>>,
+    db: &mut HashMap<String, Item>,
     mut reader: impl BufRead,
     mut writer: impl Write,
     buffer: &mut String,
@@ -29,14 +34,9 @@ fn process_command(
                 anyhow::bail!("missing argument: `key`");
             };
             match db.get(key) {
-                Some(data) => {
-                    let header = format!("VALUE {} {} {}\r\n", key, 0, data.len());
-                    let resp = [
-                        header.as_bytes(),
-                        &data[..],
-                        b"\r\n",
-                        b"END\r\n",
-                    ].concat();
+                Some(item) => {
+                    let header = format!("VALUE {} {} {}\r\n", key, item.flags, item.data.len());
+                    let resp = [header.as_bytes(), &item.data[..], b"\r\n", b"END\r\n"].concat();
                     writer.write_all(&resp)?;
                 }
                 None => {
@@ -51,7 +51,7 @@ fn process_command(
             let Some(flags) = iter.next() else {
                 anyhow::bail!("missing argument: `flags`");
             };
-            let Ok(_flags) = flags.parse::<u32>() else {
+            let Ok(flags) = flags.parse::<u32>() else {
                 anyhow::bail!("`flags` must be a 32-bit unsigned integer");
             };
             let Some(exptime) = iter.next() else {
@@ -77,7 +77,8 @@ fn process_command(
                 anyhow::bail!("parse error");
             }
 
-            db.insert(key.to_owned(), data);
+            let item = Item { data, flags };
+            db.insert(key.to_owned(), item);
 
             writer.write_all(b"STORED\r\n")?;
         }
@@ -90,7 +91,7 @@ fn process_command(
 }
 
 fn handle_client(client: TcpStream) -> anyhow::Result<()> {
-    let mut db: HashMap<String, Vec<u8>> = HashMap::new();
+    let mut db: HashMap<String, Item> = HashMap::new();
     let mut reader = BufReader::new(&client);
     let mut buffer = String::new();
 
