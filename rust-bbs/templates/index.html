@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://unpkg.com/mvp.css" /> 
+
+    <title>rust-bbs</title>
+  </head>
+  <body>
+    <header>
+      <h1>掲示板</h1>
+    </header>
+    <main>
+      <form action="/" method="post">
+        <label for="title">タイトル</label>
+        <input type="text" name="title" required />
+        <label for="body">本文</label>
+        <textarea name="body" rows="6" required></textarea>
+        <input type="submit" value="投稿" />
+      </form>
+      {% for comment in comments %}
+        <article>
+          <h2>{{ comment.title }}</h2>
+          <p>{{ comment.body }}</p>
+        </article>
+      {% endfor %}
+    </main>
+  </body>
+</html>
