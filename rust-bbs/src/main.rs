@@ -1,20 +1,29 @@
 use std::sync::{Arc, RwLock};
 
 use askama::Template;
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::{Html, IntoResponse, Redirect},
-    routing::{get, post},
-    Router, Form,
-};
+use axum::extract::State;
+use axum::http::StatusCode;
+use axum::response::{Html, IntoResponse, Redirect};
+use axum::routing::{get, post};
+use axum::{Form, Router};
 use listenfd::ListenFd;
 use serde::Deserialize;
 use tokio::net::TcpListener;
 use tower_http::services::ServeDir;
+use tower_http::trace::TraceLayer;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "rust_bbs=debug,tower_http=debug".into()),
+        )
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
     let public = ServeDir::new("public");
 
     let shared_state = {
@@ -35,7 +44,8 @@ async fn main() -> std::io::Result<()> {
         .route_service("/public", public)
         .route("/", get(index_handler))
         .route("/", post(post_comment_handler))
-        .with_state(shared_state);
+        .with_state(shared_state)
+        .layer(TraceLayer::new_for_http());
 
     let mut listenfd = ListenFd::from_env();
     let listener = match listenfd.take_tcp_listener(0).unwrap() {
@@ -43,7 +53,7 @@ async fn main() -> std::io::Result<()> {
         None => TcpListener::bind("[::]:3000").await?,
     };
 
-    println!("listening on {}", listener.local_addr().unwrap());
+    tracing::info!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await?;
     Ok(())
 }
@@ -76,13 +86,16 @@ async fn index_handler(State(state): State<SharedState>) -> impl IntoResponse {
     let template = IndexTemplate {
         comments: &state.comments,
     };
+    render(template)
+}
+
+fn render(template: impl Template) -> Result<Html<String>, (StatusCode, String)> {
     match template.render() {
-        Ok(html) => Html(html).into_response(),
-        Err(err) => (
+        Ok(html) => Ok(Html(html)),
+        Err(err) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("failed to render template: {err}"),
-        )
-            .into_response(),
+        )),
     }
 }
 
