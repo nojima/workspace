@@ -1,12 +1,12 @@
 use std::cell::{Cell, OnceCell};
 
-pub struct Cached<T> {
-    init: Cell<Option<Box<dyn FnOnce() -> T>>>,
+pub struct Cached<'a, T> {
+    init: Cell<Option<Box<dyn FnOnce() -> T + 'a>>>,
     value: OnceCell<T>,
 }
 
-impl<T> Cached<T> {
-    pub fn new(init: impl FnOnce() -> T + 'static) -> Self {
+impl<'a, T> Cached<'a, T> {
+    pub fn new(init: impl FnOnce() -> T + 'a) -> Self {
         Self {
             init: Cell::new(Some(Box::new(init))),
             value: OnceCell::new(),
@@ -16,10 +16,18 @@ impl<T> Cached<T> {
     pub fn get(&self) -> &T {
         self.value.get_or_init(|| {
             let Some(init) = self.init.take() else {
-                panic!("[bug] init function called twice!")
+                unreachable!("The init function should be never called twice");
             };
             init()
         })
+    }
+
+    pub fn take(self) -> T {
+        let _ = self.get();
+        let Some(value) = self.value.into_inner() else {
+            unreachable!("The value should be always cached after calling get()");
+        };
+        value
     }
 }
 
@@ -27,25 +35,17 @@ impl<T> Cached<T> {
 mod tests {
     use super::*;
 
-    #[derive(Debug)]
-    struct Foo {
-        #[allow(dead_code)]
-        message: String,
-    }
-
-    impl Drop for Foo {
-        fn drop(&mut self) {
-            println!("Dropped: {self:?}")
-        }
-    }
-
     #[test]
-    fn test() {
-        let msg = "hello".to_owned();
-        let c1 = Cached::new(|| Foo { message: msg });
-        let msg2 = "hello".to_owned();
-        let _c2 = Cached::new(|| Foo { message: msg2 });
-        println!("{:?} world", c1.get());
-        println!("{:?} world again", c1.get());
+    fn test_cached() {
+        let mut n_called = 0;
+        let cached = Cached::new(|| {
+            n_called += 1;
+            "hello".to_string()
+        });
+        assert_eq!(cached.get(), "hello");
+        assert_eq!(cached.get(), "hello");
+        assert_eq!(cached.get(), "hello");
+        drop(cached);
+        assert_eq!(n_called, 1);
     }
 }
