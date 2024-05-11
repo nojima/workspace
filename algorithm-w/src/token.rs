@@ -6,7 +6,7 @@ use compact_str::CompactString;
 pub enum Token {
     True,
     False,
-    Integer(i64),
+    Int(i64),
     Identifier(CompactString),
 
     If,

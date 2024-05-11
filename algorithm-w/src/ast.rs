@@ -5,7 +5,7 @@ use crate::symbol::Symbol;
 #[derive(Debug)]
 pub enum Expr {
     Bool(bool),
-    Integer(i64),
+    Int(i64),
     Lambda(Symbol, Rc<Expr>),
     Variable(Symbol),
     If(Box<Expr>, Box<Expr>, Box<Expr>),

@@ -26,7 +26,7 @@ type Result<T> = std::result::Result<T, EvalError>;
 pub fn eval(expr: &Expr, frame: Rc<Frame>) -> Result<Value> {
     match expr {
         Expr::Bool(b) => Ok(Value::Bool(*b)),
-        Expr::Integer(n) => Ok(Value::Integer(*n)),
+        Expr::Int(n) => Ok(Value::Integer(*n)),
         Expr::Lambda(param, body) => {
             let closure = Closure {
                 frame: frame,

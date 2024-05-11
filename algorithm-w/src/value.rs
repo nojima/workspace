@@ -46,6 +46,7 @@ pub struct Frame {
 
 impl Frame {
     pub fn lookup(&self, name: &Symbol) -> Option<Value> {
+        // TODO: リニアサーチしているので効率が悪い
         if self.v_name == name {
             return Some(self.v_value.clone());
         }

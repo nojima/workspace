@@ -108,7 +108,7 @@ fn lex_one(input: &str) -> LexResult {
     let re_integer = static_regex!(r"^[0-9]+");
     if let Some(m) = re_integer.find(input) {
         let n = i64::from_str(m.as_str()).unwrap();
-        return ok(Token::Integer(n), m.end());
+        return ok(Token::Int(n), m.end());
     }
 
     err(LexicalError::UnexpectedCharacter(first))

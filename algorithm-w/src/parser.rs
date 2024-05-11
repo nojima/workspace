@@ -96,7 +96,7 @@ fn parse_term(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
     match token {
         Token::True => ok(Expr::Bool(true), tokens),
         Token::False => ok(Expr::Bool(false), tokens),
-        Token::Integer(n) => ok(Expr::Integer(*n), tokens),
+        Token::Int(n) => ok(Expr::Int(*n), tokens),
         Token::Identifier(ident) => ok(Expr::Variable(ident.clone()), tokens),
         Token::LParen => parse_paren(tokens),
         Token::Lambda => parse_lambda(tokens),

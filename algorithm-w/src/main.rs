@@ -12,6 +12,8 @@ mod span;
 mod symbol;
 mod token;
 mod value;
+mod types;
+mod typing;
 
 fn main() -> anyhow::Result<()> {
     let mut rl = DefaultEditor::new()?;
