@@ -1,7 +1,5 @@
 use std::{collections::HashMap, fmt::Display};
 
-use crate::symbol::Symbol;
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Int,
@@ -32,6 +30,7 @@ impl Type {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Substitution(HashMap<u64, Type>);
 
 impl Substitution {
@@ -45,6 +44,12 @@ impl Substitution {
 
     pub fn add(&mut self, id: u64, t: Type) {
         self.0.insert(id, t);
+    }
+}
+
+impl<const N: usize> From<[(u64, Type); N]> for Substitution {
+    fn from(value: [(u64, Type); N]) -> Self {
+        Self(HashMap::from(value))
     }
 }
 

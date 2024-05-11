@@ -35,3 +35,43 @@ pub fn unify(mut equals: Vec<Equal>) -> Result<Substitution, UnificationError> {
     }
     Ok(subst)
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::types::{Equal, Type};
+
+    use super::unify;
+
+    fn func(t1: Type, t2: Type) -> Type {
+        Type::Func(Box::new(t1), Box::new(t2))
+    }
+
+    #[test]
+    fn test() -> anyhow::Result<()> {
+        use Type::*;
+        assert_eq!(
+            unify(vec![Equal(Variable(0), Int)])?,
+            [(0, Int)].into(),
+        );
+        assert_eq!(
+            unify(vec![Equal(Bool, Variable(0))])?,
+            [(0, Bool)].into(),
+        );
+        assert_eq!(
+            unify(vec![Equal(func(Int, Bool), func(Variable(0), Variable(1)))])?,
+            [(0, Int), (1, Bool)].into(),
+        );
+        assert_eq!(
+            unify(vec![Equal(func(Variable(0), Int), func(Variable(1), Variable(0)))])?,
+            [(0, Int), (1, Int)].into(),
+        );
+        assert_eq!(
+            unify(vec![
+                Equal(func(Variable(0), Variable(0)), func(Variable(1), Variable(2))),
+                Equal(Variable(2), Bool),
+            ])?,
+            [(0, Bool), (1, Bool), (2, Bool)].into(),
+        );
+        Ok(())
+    }
+}
