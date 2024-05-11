@@ -1,4 +1,9 @@
-use crate::{ast::Expr, token::Token};
+use std::rc::Rc;
+
+use crate::{
+    ast::{BinOp, Expr},
+    token::Token,
+};
 
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum ParseError {
@@ -29,7 +34,10 @@ macro_rules! take_exact {
     ($pattern:pat, $tokens:ident, $expected:expr) => {
         let (token, $tokens) = take_one($tokens)?;
         let $pattern = token else {
-            return Err(ParseError::UnexpectedToken2($expected.into(), token.clone()));
+            return Err(ParseError::UnexpectedToken2(
+                $expected.into(),
+                token.clone(),
+            ));
         };
     };
 }
@@ -43,28 +51,47 @@ pub fn parse(tokens: &[Token]) -> Result<Box<Expr>> {
 }
 
 // expr ::=
-//   | simple_expr+
+//   | term
+//   | expr term
+//   | expr "+" term
+//   | expr "==" term
 fn parse_expr(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
-    let (mut expr, mut tokens) = parse_simple_expr(tokens)?;
+    let (mut expr, mut tokens) = parse_term(tokens)?;
     loop {
-        match parse_simple_expr(tokens) {
-            Ok((expr_, tokens_)) => {
-                expr = Box::new(Expr::Apply(expr, expr_));
+        let Ok((t_binop, tokens_)) = take_one(tokens) else {
+            break;
+        };
+        match t_binop {
+            Token::Plus => {
+                let (expr_, tokens_) = parse_term(tokens_)?;
+                expr = Box::new(Expr::BinOp(BinOp::Add, expr, expr_));
                 tokens = tokens_;
             }
-            Err(_) => return Ok((expr, tokens)),
+            Token::EqEq => {
+                let (expr_, tokens_) = parse_term(tokens_)?;
+                expr = Box::new(Expr::BinOp(BinOp::Eq, expr, expr_));
+                tokens = tokens_;
+            }
+            _ => match parse_term(tokens) {
+                Ok((expr_, tokens_)) => {
+                    expr = Box::new(Expr::Apply(expr, expr_));
+                    tokens = tokens_;
+                }
+                Err(_) => break,
+            },
         }
     }
+    Ok((expr, tokens))
 }
 
-// simple_expr ::=
+// term ::=
 //   | bool
 //   | integer
 //   | identifier
 //   | "(" expr ")"
 //   | "lambda" identifier "." expr
 //   | "if" expr "then" expr "else" expr
-fn parse_simple_expr(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
+fn parse_term(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
     let (token, tokens) = take_one(tokens)?;
     match token {
         Token::True => ok(Expr::Bool(true), tokens),
@@ -90,7 +117,7 @@ fn parse_lambda(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
     take_exact!(Token::Identifier(t_ident), tokens, "identifier");
     take_exact!(Token::Dot, tokens, "'.'");
     let (expr, tokens) = parse_expr(tokens)?;
-    let lambda = Expr::Lambda(t_ident.clone(), expr);
+    let lambda = Expr::Lambda(t_ident.clone(), Rc::new(*expr));
     ok(lambda, tokens)
 }
 
