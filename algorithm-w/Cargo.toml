@@ -1,0 +1,10 @@
+[package]
+name = "algorithm-w"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.83"
+compact_str = "0.7.1"
+regex = "1.10.4"
+thiserror = "1.0.60"
