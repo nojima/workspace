@@ -91,6 +91,7 @@ fn parse_expr(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
 //   | "(" expr ")"
 //   | "[" identifier "]" expr
 //   | "if" expr "then" expr "else" expr
+//   | "let" identifier "=" expr ";" expr
 fn parse_term(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
     let (token, tokens) = take_one(tokens)?;
     match token {
@@ -101,6 +102,7 @@ fn parse_term(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
         Token::LParen => parse_paren(tokens),
         Token::LBracket => parse_lambda(tokens),
         Token::If => parse_if(tokens),
+        Token::Let => parse_let(tokens),
         t => return Err(ParseError::UnexpectedToken(t.clone())),
     }
 }
@@ -130,4 +132,15 @@ fn parse_if(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
     let (else_expr, tokens) = parse_expr(tokens)?;
     let if_expr = Expr::If(cond_expr, then_expr, else_expr);
     ok(if_expr, tokens)
+}
+
+// "let" identifier "=" expr ";" expr
+fn parse_let(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
+    take_exact!(Token::Identifier(t_ident), tokens, "identifier");
+    take_exact!(Token::Eq, tokens, "'='");
+    let (bound_expr, tokens) = parse_expr(tokens)?;
+    take_exact!(Token::Semicolon, tokens, "';'");
+    let (body_expr, tokens) = parse_expr(tokens)?;
+    let let_expr = Expr::Let(t_ident.clone(), bound_expr, body_expr);
+    ok(let_expr, tokens)
 }

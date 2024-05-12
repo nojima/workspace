@@ -63,6 +63,15 @@ pub fn eval(expr: &Expr, frame: Rc<Frame>) -> Result<Value> {
                 eval(&else_expr, frame)
             }
         }
+        Expr::Let(name, bound_expr, body_expr) => {
+            let bound_value = eval(&bound_expr, Rc::clone(&frame))?;
+            let new_frame = Rc::new(Frame {
+                parent: Some(frame),
+                v_name: name.clone(),
+                v_value: bound_value,
+            });
+            eval(&body_expr, new_frame)
+        }
         Expr::BinOp(op, lhs_expr, rhs_expr) => {
             let lhs_value = eval(lhs_expr, Rc::clone(&frame))?;
             let rhs_value = eval(rhs_expr, frame)?;

@@ -7,6 +7,9 @@ use crate::{
 pub enum UnificationError {
     #[error("failed to unify: lhs={0}, rhs={1}")]
     FailedToUnify(String, String),
+
+    #[error("not implemented")]
+    NotImplemented,
 }
 
 pub fn unify(mut equals: Vec<Equal>) -> Result<Substitution, UnificationError> {
@@ -75,7 +78,7 @@ pub fn primary_type(expr: &Expr) -> Result<(Env, Type), UnificationError> {
             let env2 = env2.substitute(&subst);
             Ok((env1.union(&env2), new_t.substitute(&subst)))
         }
-        _ => unimplemented!(),
+        _ => Err(UnificationError::NotImplemented),
     }
 }
 
