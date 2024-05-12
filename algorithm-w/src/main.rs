@@ -45,6 +45,9 @@ fn do_eval(input: &str) -> anyhow::Result<()> {
         v_name: "false".into(),
         v_value: Value::Bool(false),
     };
+    let (env, t) = typing::primary_type(&ast)?;
+    println!("Env = {:?}", env);
+    println!("Type = {}", t);
     let value = eval::eval(&ast, Rc::new(frame))?;
     println!("Value = {:?}", value);
     Ok(())
