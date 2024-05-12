@@ -11,9 +11,9 @@ mod parser;
 mod span;
 mod symbol;
 mod token;
-mod value;
 mod types;
 mod typing;
+mod value;
 
 fn main() -> anyhow::Result<()> {
     let mut rl = DefaultEditor::new()?;
@@ -57,7 +57,10 @@ fn do_eval(input: &str) -> anyhow::Result<()> {
 mod tests {
     use std::rc::Rc;
 
-    use crate::{eval, lexer, parser, value::{Frame, Value}};
+    use crate::{
+        eval, lexer, parser,
+        value::{Frame, Value},
+    };
 
     fn doit(input: &str) -> anyhow::Result<Value> {
         let token_and_spans = lexer::lex(input)?;
@@ -82,8 +85,8 @@ mod tests {
         assert_eq!(Value::Bool(false), doit("0 == 1")?);
         assert_eq!(Value::Integer(2), doit("if 1 == 1 then 2 else 3")?);
         assert_eq!(Value::Integer(3), doit("if 1 == 2 then 2 else 3")?);
-        assert_eq!(Value::Integer(42), doit("(lambda x. x) 42")?);
-        assert_eq!(Value::Integer(5), doit("(lambda x. lambda y. x+y+y) 1 2")?);
+        assert_eq!(Value::Integer(42), doit("([x] x) 42")?);
+        assert_eq!(Value::Integer(5), doit("([x][y] x+y+y) 1 2")?);
         Ok(())
     }
 }

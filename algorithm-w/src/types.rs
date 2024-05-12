@@ -9,7 +9,7 @@ use crate::symbol::Symbol;
 
 static NEXT_VARIABLE_ID: AtomicU64 = AtomicU64::new(0);
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
     Int,
     Bool,
@@ -43,6 +43,12 @@ impl Type {
             Variable(id_) => *id_ == id,
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Polytype {
+    quantifiers: Vec<u64>,
+    ty: Type,
 }
 
 #[derive(Debug, PartialEq)]

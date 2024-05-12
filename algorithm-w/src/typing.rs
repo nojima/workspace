@@ -1,5 +1,7 @@
-use crate::{ast::Expr, types::{Env, Equal, Substitutable, Substitution, Type}};
-
+use crate::{
+    ast::Expr,
+    types::{Env, Equal, Substitutable, Substitution, Type},
+};
 
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum UnificationError {
@@ -73,7 +75,7 @@ pub fn primary_type(expr: &Expr) -> Result<(Env, Type), UnificationError> {
             let env2 = env2.substitute(&subst);
             Ok((env1.union(&env2), new_t.substitute(&subst)))
         }
-        _ => unimplemented!()
+        _ => unimplemented!(),
     }
 }
 
@@ -90,25 +92,25 @@ mod tests {
     #[test]
     fn test() -> anyhow::Result<()> {
         use Type::*;
-        assert_eq!(
-            unify(vec![Equal(Variable(0), Int)])?,
-            [(0, Int)].into(),
-        );
-        assert_eq!(
-            unify(vec![Equal(Bool, Variable(0))])?,
-            [(0, Bool)].into(),
-        );
+        assert_eq!(unify(vec![Equal(Variable(0), Int)])?, [(0, Int)].into(),);
+        assert_eq!(unify(vec![Equal(Bool, Variable(0))])?, [(0, Bool)].into(),);
         assert_eq!(
             unify(vec![Equal(func(Int, Bool), func(Variable(0), Variable(1)))])?,
             [(0, Int), (1, Bool)].into(),
         );
         assert_eq!(
-            unify(vec![Equal(func(Variable(0), Int), func(Variable(1), Variable(0)))])?,
+            unify(vec![Equal(
+                func(Variable(0), Int),
+                func(Variable(1), Variable(0))
+            )])?,
             [(0, Int), (1, Int)].into(),
         );
         assert_eq!(
             unify(vec![
-                Equal(func(Variable(0), Variable(0)), func(Variable(1), Variable(2))),
+                Equal(
+                    func(Variable(0), Variable(0)),
+                    func(Variable(1), Variable(2))
+                ),
                 Equal(Variable(2), Bool),
             ])?,
             [(0, Bool), (1, Bool), (2, Bool)].into(),

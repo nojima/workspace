@@ -69,16 +69,20 @@ pub fn eval(expr: &Expr, frame: Rc<Frame>) -> Result<Value> {
             match op {
                 BinOp::Add => {
                     let Value::Integer(x) = lhs_value else {
-                        return Err(EvalError::UnexpectedTypeOfArgument("Integer".into(), lhs_value.to_string()));
+                        return Err(EvalError::UnexpectedTypeOfArgument(
+                            "Integer".into(),
+                            lhs_value.to_string(),
+                        ));
                     };
                     let Value::Integer(y) = rhs_value else {
-                        return Err(EvalError::UnexpectedTypeOfArgument("Integer".into(), rhs_value.to_string()));
+                        return Err(EvalError::UnexpectedTypeOfArgument(
+                            "Integer".into(),
+                            rhs_value.to_string(),
+                        ));
                     };
                     Ok(Value::Integer(x + y))
                 }
-                BinOp::Eq => {
-                    Ok(Value::Bool(lhs_value == rhs_value))
-                }
+                BinOp::Eq => Ok(Value::Bool(lhs_value == rhs_value)),
             }
         }
     }

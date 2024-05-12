@@ -89,7 +89,7 @@ fn parse_expr(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
 //   | integer
 //   | identifier
 //   | "(" expr ")"
-//   | "lambda" identifier "." expr
+//   | "[" identifier "]" expr
 //   | "if" expr "then" expr "else" expr
 fn parse_term(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
     let (token, tokens) = take_one(tokens)?;
@@ -99,7 +99,7 @@ fn parse_term(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
         Token::Int(n) => ok(Expr::Int(*n), tokens),
         Token::Identifier(ident) => ok(Expr::Variable(ident.clone()), tokens),
         Token::LParen => parse_paren(tokens),
-        Token::Lambda => parse_lambda(tokens),
+        Token::LBracket => parse_lambda(tokens),
         Token::If => parse_if(tokens),
         t => return Err(ParseError::UnexpectedToken(t.clone())),
     }
@@ -112,10 +112,10 @@ fn parse_paren(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
     Ok((expr, tokens))
 }
 
-// "lambda" identifier "." expr
+// "[" identifier "]" expr
 fn parse_lambda(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
     take_exact!(Token::Identifier(t_ident), tokens, "identifier");
-    take_exact!(Token::Dot, tokens, "'.'");
+    take_exact!(Token::RBracket, tokens, "']'");
     let (expr, tokens) = parse_expr(tokens)?;
     let lambda = Expr::Lambda(t_ident.clone(), Rc::new(*expr));
     ok(lambda, tokens)
