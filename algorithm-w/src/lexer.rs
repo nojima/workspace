@@ -100,7 +100,7 @@ fn lex_one(input: &str) -> LexResult {
             "let" => Token::Let,
             "in" => Token::In,
             "lambda" => Token::Lambda,
-            _ => Token::Identifier(s.into()),
+            _ => Token::Identifier(s.to_owned().into()),
         };
         return ok(token, m.end());
     }

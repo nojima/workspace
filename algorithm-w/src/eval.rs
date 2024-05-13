@@ -38,7 +38,7 @@ pub fn eval(expr: &Expr, frame: Rc<Frame>) -> Result<Value> {
             };
             Ok(Value::Closure(Rc::new(closure)))
         }
-        Expr::Variable(name) => match frame.lookup(name) {
+        Expr::Variable(name) => match frame.lookup(*name) {
             Some(value) => Ok(value),
             None => Err(EvalError::UndefinedVariable(name.clone())),
         },

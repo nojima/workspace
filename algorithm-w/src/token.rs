@@ -1,13 +1,13 @@
 use std::fmt::{self, Display, Formatter};
 
-use compact_str::CompactString;
+use crate::symbol::Symbol;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Token {
     True,
     False,
     Int(i64),
-    Identifier(CompactString),
+    Identifier(Symbol),
 
     If,
     Then,
