@@ -11,14 +11,17 @@ pub enum EvalError {
     #[error("undefined variable: {0}")]
     UndefinedVariable(Symbol),
 
-    #[error("non-closure value cannot be applied")]
-    NonClosureObjectCannoBeApplied,
+    #[error("called non-callable object: {0}")]
+    NonCallableObject(String),
 
     #[error("non-boolean value cannot be used in condition")]
     NonBooleanValueCannotBeUsedInCondition,
 
     #[error("unexpected type of argument: expected={0}, actual={1}")]
     UnexpectedTypeOfArgument(String, String),
+
+    #[error("{0}")]
+    GeneralError(String),
 }
 
 type Result<T> = std::result::Result<T, EvalError>;
@@ -42,15 +45,20 @@ pub fn eval(expr: &Expr, frame: Rc<Frame>) -> Result<Value> {
         Expr::Apply(expr1, expr2) => {
             let f = eval(expr1, Rc::clone(&frame))?;
             let arg = eval(expr2, frame)?;
-            let Value::Closure(closure) = f else {
-                return Err(EvalError::NonClosureObjectCannoBeApplied);
-            };
-            let new_frame = Rc::new(Frame {
-                parent: Some(Rc::clone(&closure.frame)),
-                v_name: closure.param.clone(),
-                v_value: arg,
-            });
-            eval(&closure.body, new_frame)
+            match f {
+                Value::BuiltinFunction(_, f) => {
+                    f(arg).map_err(|e| EvalError::GeneralError(e))
+                }
+                Value::Closure(closure) => {
+                    let new_frame = Rc::new(Frame {
+                        parent: Some(Rc::clone(&closure.frame)),
+                        v_name: closure.param.clone(),
+                        v_value: arg,
+                    });
+                    eval(&closure.body, new_frame)
+                }
+                _ => Err(EvalError::NonCallableObject(f.to_string())),
+            }
         }
         Expr::If(cond_expr, then_expr, else_expr) => {
             let cond_value = eval(&cond_expr, Rc::clone(&frame))?;

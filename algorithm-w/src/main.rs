@@ -35,16 +35,29 @@ fn main() -> anyhow::Result<()> {
     }
 }
 
+fn initial_frame() -> Frame {
+    Frame {
+        parent: Some(Rc::new(Frame {
+            parent: None,
+            v_name: "succ".into(),
+            v_value: Value::BuiltinFunction("succ".into(), |v| match v {
+                Value::Integer(n) => Ok(Value::Integer(n + 1)),
+                _ => Err("unexpected type".into()),
+            }),
+        })),
+        v_name: "iszero".into(),
+        v_value: Value::BuiltinFunction("iszero".into(), |v| match v {
+            Value::Integer(n) => Ok(Value::Bool(n == 0)),
+            _ => Err("unexpected type".into()),
+        }),
+    }
+}
+
 fn do_eval(input: &str) -> anyhow::Result<()> {
     let token_and_spans = lexer::lex(input)?;
     let tokens: Vec<_> = token_and_spans.into_iter().map(|(t, _)| t).collect();
     let ast = parser::parse(&tokens)?;
     println!("AST = {:?}", ast);
-    let frame = Frame {
-        parent: None,
-        v_name: "false".into(),
-        v_value: Value::Bool(false),
-    };
     match typing::primary_type(&ast) {
         Ok((env, t)) => {
             println!("Env = {:?}", env);
@@ -54,7 +67,7 @@ fn do_eval(input: &str) -> anyhow::Result<()> {
             println!("Failed to type-check: {e}")
         }
     }
-    let value = eval::eval(&ast, Rc::new(frame))?;
+    let value = eval::eval(&ast, Rc::new(initial_frame()))?;
     println!("Value = {:?}", value);
     Ok(())
 }

@@ -7,6 +7,7 @@ pub enum Value {
     Bool(bool),
     Integer(i64),
     Closure(Rc<Closure>),
+    BuiltinFunction(Symbol, fn(Value) -> Result<Value, String>),
 }
 
 impl Display for Value {
@@ -15,6 +16,7 @@ impl Display for Value {
             Value::Bool(b) => write!(f, "{b}"),
             Value::Integer(n) => write!(f, "{n}"),
             Value::Closure(c) => write!(f, "<closure {:p}>", c),
+            Value::BuiltinFunction(name, _) => write!(f, "<builtin function {}>", name),
         }
     }
 }
@@ -25,6 +27,7 @@ impl PartialEq for Value {
             (Value::Bool(b1), Value::Bool(b2)) => b1 == b2,
             (Value::Integer(n1), Value::Integer(n2)) => n1 == n2,
             (Value::Closure(c1), Value::Closure(c2)) => std::ptr::eq(c1, c2),
+            (Value::BuiltinFunction(name1, _), Value::BuiltinFunction(name2, _)) => name1 == name2,
             _ => false,
         }
     }
