@@ -16,6 +16,14 @@ pub enum Type {
     Quantified(usize),
 }
 
+pub fn int() -> Type {
+    Type::Simple("Int".into())
+}
+
+pub fn bool() -> Type {
+    Type::Simple("Bool".into())
+}
+
 impl Type {
     pub fn fresh() -> Type {
         Type::Variable(Rc::new(RefCell::new(Variable::fresh())))
@@ -195,8 +203,8 @@ pub fn type_of(env: &Environment, expr: &Expr) -> Result<Type, TypeError> {
             let expr2_env = env.update(*name, expr1_type.generalize());
             type_of(&expr2_env, expr2)
         }
-        Expr::Int(_) => Ok(Type::Simple("Int".into())),
-        Expr::Bool(_) => Ok(Type::Simple("Bool".into())),
+        Expr::Int(_) => Ok(int()),
+        Expr::Bool(_) => Ok(bool()),
         _ => Err(TypeError::Unimplemented),
     }
 }
