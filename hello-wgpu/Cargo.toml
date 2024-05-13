@@ -1,0 +1,24 @@
+[package]
+name = "hello-wgpu"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bytemuck = { version = "1.13.1", features = ["derive"] }
+gloo = "0.8.1"
+log = "0.4.19"
+vek = "0.16.1"
+wasm-bindgen = "0.2.87"
+wasm-bindgen-futures = "0.4.37"
+wasm-logger = "0.2.0"
+web-sys = { version = "0.3.64", features = ["HtmlCanvasElement"] }
+wee_alloc = "0.4.5"
+wgpu = "0.17.0"
+
+[profile.release]
+panic = 'abort'
+codegen-units = 1
+opt-level = 'z'
+lto = true
