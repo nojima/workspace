@@ -1,5 +1,6 @@
 use std::{
     cell::RefCell,
+    collections::{hash_map::Entry, HashMap},
     fmt::Display,
     rc::Rc,
     sync::atomic::{AtomicUsize, Ordering},
@@ -12,11 +13,58 @@ pub enum Type {
     Simple(Symbol),
     Function(Box<Type>, Box<Type>),
     Variable(Rc<RefCell<Variable>>),
+    Quantified(usize),
 }
 
 impl Type {
     pub fn fresh() -> Type {
         Type::Variable(Rc::new(RefCell::new(Variable::fresh())))
+    }
+
+    // この型に含まれるすべての Variable を Quantified に変換した型を返す
+    // (unsound!)
+    pub fn generalize(&self) -> Type {
+        match self {
+            Type::Variable(var) => {
+                let var = var.borrow();
+                match *var {
+                    Variable::Unbound(id) => Type::Quantified(id),
+                    Variable::Bound(ref t) => t.generalize(),
+                }
+            }
+            Type::Function(t1, t2) => {
+                Type::Function(Box::new(t1.generalize()), Box::new(t2.generalize()))
+            }
+            _ => self.clone(),
+        }
+    }
+
+    // この型に含まれる Quantified をすべて fresh な Variable に置き換えた型を返す
+    pub fn instanciate(&self) -> Type {
+        let mut memo = HashMap::new();
+        self.instanciate_(&mut memo)
+    }
+
+    fn instanciate_(&self, memo: &mut HashMap<usize, Rc<RefCell<Variable>>>) -> Type {
+        match self {
+            Type::Quantified(id) => match memo.entry(*id) {
+                Entry::Occupied(entry) => {
+                    let var_ref = entry.get();
+                    Type::Variable(Rc::clone(var_ref))
+                }
+                Entry::Vacant(entry) => {
+                    let var = Variable::fresh();
+                    let var_ref = Rc::new(RefCell::new(var));
+                    entry.insert(Rc::clone(&var_ref));
+                    Type::Variable(var_ref)
+                }
+            },
+            Type::Function(t1, t2) => Type::Function(
+                Box::new(t1.instanciate_(memo)),
+                Box::new(t2.instanciate_(memo)),
+            ),
+            _ => self.clone(),
+        }
     }
 }
 
@@ -29,6 +77,7 @@ impl Display for Type {
                 Variable::Unbound(id) => write!(f, "τ{id}"),
                 Variable::Bound(ref t) => t.fmt(f),
             },
+            Type::Quantified(id) => write!(f, "α{id}"),
         }
     }
 }
@@ -57,6 +106,9 @@ pub enum TypeError {
     #[error("undefined variable: {0}")]
     UndefinedVariable(Symbol),
 
+    #[error("occurs check failure")]
+    OccursCheckFailure,
+
     #[error("unimplemented")]
     Unimplemented,
 }
@@ -78,7 +130,7 @@ pub fn unify(t1: &Type, t2: &Type) -> Result<(), TypeError> {
             let mut v = v.borrow_mut();
             match *v {
                 Variable::Unbound(_) => {
-                    // TODO: occur check
+                    occurs_check(&v, t)?;
                     *v = Variable::Bound(t.clone());
                 }
                 Variable::Bound(ref tt) => {
@@ -92,13 +144,36 @@ pub fn unify(t1: &Type, t2: &Type) -> Result<(), TypeError> {
     }
 }
 
+// t の中に var が出現していたらエラーを返す
+pub fn occurs_check(var: &Variable, t: &Type) -> Result<(), TypeError> {
+    match t {
+        Type::Variable(var2) => {
+            let var2 = var2.borrow();
+            if std::ptr::eq(var, &*var2) {
+                return Err(TypeError::OccursCheckFailure);
+            }
+            if let Variable::Bound(ref t2) = *var2 {
+                occurs_check(var, t2)
+            } else {
+                Ok(())
+            }
+        }
+        Type::Function(t1, t2) => {
+            occurs_check(var, t1)?;
+            occurs_check(var, t2)?;
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
 pub fn type_of(env: &Environment, expr: &Expr) -> Result<Type, TypeError> {
     match expr {
         Expr::Variable(name) => {
             let Some(t) = env.get(name) else {
                 return Err(TypeError::UndefinedVariable(*name));
             };
-            Ok(t.clone())
+            Ok(t.instanciate())
         }
         Expr::Lambda(param_name, body_expr) => {
             let param_type = Type::fresh();
@@ -115,6 +190,13 @@ pub fn type_of(env: &Environment, expr: &Expr) -> Result<Type, TypeError> {
             unify(&fun_type1, &fun_type2)?;
             Ok(ret_type)
         }
+        Expr::Let(name, expr1, expr2) => {
+            let expr1_type = type_of(env, expr1)?;
+            let expr2_env = env.update(*name, expr1_type.generalize());
+            type_of(&expr2_env, expr2)
+        }
+        Expr::Int(_) => Ok(Type::Simple("Int".into())),
+        Expr::Bool(_) => Ok(Type::Simple("Bool".into())),
         _ => Err(TypeError::Unimplemented),
     }
 }
