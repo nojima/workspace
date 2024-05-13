@@ -1,123 +1,120 @@
-use crate::{
-    ast::Expr,
-    types::{Env, Equal, Substitutable, Substitution, Type},
+use std::{
+    cell::RefCell,
+    fmt::Display,
+    rc::Rc,
+    sync::atomic::{AtomicUsize, Ordering},
 };
 
-#[derive(Debug, Clone, PartialEq, thiserror::Error)]
-pub enum UnificationError {
-    #[error("failed to unify: lhs={0}, rhs={1}")]
-    FailedToUnify(String, String),
+use crate::{ast::Expr, symbol::Symbol};
 
-    #[error("not implemented")]
-    NotImplemented,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Type {
+    Simple(Symbol),
+    Function(Box<Type>, Box<Type>),
+    Variable(Rc<RefCell<Variable>>),
 }
 
-pub fn unify(mut equals: Vec<Equal>) -> Result<Substitution, UnificationError> {
-    let mut subst = Substitution::new();
-    while let Some(eq) = equals.pop() {
-        use Type::*;
-        match eq {
-            // 冗長な等式の除去
-            Equal(t1, t2) if t1 == t2 => {}
-            // (t1 → t2) == (t3 → t4) ==> (t1 == t3) && (t2 == t4)
-            Equal(Func(t1, t2), Func(t3, t4)) => {
-                equals.push(Equal(*t1, *t3));
-                equals.push(Equal(*t2, *t4));
-            }
-            // 代入
-            Equal(Variable(id), t) | Equal(t, Variable(id)) if !t.occur(id) => {
-                subst.add(id, t);
-                equals = equals.substitute(&subst);
-            }
-            // どれにも当てはまらない場合は失敗
-            Equal(t1, t2) => {
-                return Err(UnificationError::FailedToUnify(
-                    t1.to_string(),
-                    t2.to_string(),
-                ));
-            }
+impl Type {
+    pub fn fresh() -> Type {
+        Type::Variable(Rc::new(RefCell::new(Variable::fresh())))
+    }
+}
+
+impl Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Type::Simple(name) => name.fmt(f),
+            Type::Function(a, b) => write!(f, "({a} -> {b})"),
+            Type::Variable(v) => match *v.borrow() {
+                Variable::Unbound(id) => write!(f, "τ{id}"),
+                Variable::Bound(ref t) => t.fmt(f),
+            },
         }
     }
-    Ok(subst)
 }
 
-fn func(t1: Type, t2: Type) -> Type {
-    Type::Func(Box::new(t1), Box::new(t2))
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Variable {
+    Unbound(usize),
+    Bound(Type),
 }
 
-pub fn primary_type(expr: &Expr) -> Result<(Env, Type), UnificationError> {
-    match expr {
-        Expr::Bool(_) => Ok((Env::empty(), Type::Bool)),
-        Expr::Int(_) => Ok((Env::empty(), Type::Int)),
-        Expr::Lambda(param, body) => {
-            let (body_env, body_type) = primary_type(&body)?;
-            if body_env.contains(param) {
-                let t = func(body_env[param].clone(), body_type);
-                Ok((body_env.without(param), t))
-            } else {
-                Ok((body_env, func(Type::fresh(), body_type)))
-            }
+impl Variable {
+    pub fn fresh() -> Variable {
+        static NEXT_VARIABLE_ID: AtomicUsize = AtomicUsize::new(0);
+        let id = NEXT_VARIABLE_ID.fetch_add(1, Ordering::SeqCst);
+        Variable::Unbound(id)
+    }
+}
+
+pub type Environment = im::HashMap<Symbol, Type>;
+
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum TypeError {
+    #[error("failed to unify: {0} and {1}")]
+    FailedToUnify(Type, Type),
+
+    #[error("undefined variable: {0}")]
+    UndefinedVariable(Symbol),
+
+    #[error("unimplemented")]
+    Unimplemented,
+}
+
+pub fn unify(t1: &Type, t2: &Type) -> Result<(), TypeError> {
+    match (t1, t2) {
+        (t1, t2) if t1 == t2 => {
+            return Ok(());
         }
+
+        (Type::Function(t1, t2), Type::Function(t3, t4)) => {
+            unify(t1, t3)?;
+            unify(t2, t4)?;
+            return Ok(());
+        }
+
+        // 少なくとも片方が型変数であるとき
+        (Type::Variable(v), t) | (t, Type::Variable(v)) => {
+            let mut v = v.borrow_mut();
+            match *v {
+                Variable::Unbound(_) => {
+                    // TODO: occur check
+                    *v = Variable::Bound(t.clone());
+                }
+                Variable::Bound(ref tt) => {
+                    unify(t, tt)?;
+                }
+            };
+            return Ok(());
+        }
+
+        _ => return Err(TypeError::FailedToUnify(t1.clone(), t2.clone())),
+    }
+}
+
+pub fn type_of(env: &Environment, expr: &Expr) -> Result<Type, TypeError> {
+    match expr {
         Expr::Variable(name) => {
-            let t = Type::fresh();
-            Ok((Env::unit(name.clone(), t.clone()), t))
+            let Some(t) = env.get(name) else {
+                return Err(TypeError::UndefinedVariable(*name));
+            };
+            Ok(t.clone())
+        }
+        Expr::Lambda(param_name, body_expr) => {
+            let param_type = Type::fresh();
+            let body_env = env.update(*param_name, param_type.clone());
+            let body_type = type_of(&body_env, body_expr)?;
+            let t = Type::Function(Box::new(param_type), Box::new(body_type));
+            Ok(t)
         }
         Expr::Apply(expr1, expr2) => {
-            let (env1, type1) = primary_type(expr1)?;
-            let (env2, type2) = primary_type(expr2)?;
-            let new_t = Type::fresh();
-            let mut equals = vec![Equal(type1, func(type2, new_t.clone()))];
-            for (name, t1) in env1.iter() {
-                if env2.contains(name) {
-                    let t2 = env2[name].clone();
-                    equals.push(Equal(t1.clone(), t2));
-                }
-            }
-            let subst = unify(equals)?;
-            let env1 = env1.substitute(&subst);
-            let env2 = env2.substitute(&subst);
-            Ok((env1.union(&env2), new_t.substitute(&subst)))
+            let fun_type1 = type_of(env, expr1)?;
+            let arg_type = type_of(env, expr2)?;
+            let ret_type = Type::fresh();
+            let fun_type2 = Type::Function(Box::new(arg_type), Box::new(ret_type.clone()));
+            unify(&fun_type1, &fun_type2)?;
+            Ok(ret_type)
         }
-        _ => Err(UnificationError::NotImplemented),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::types::{Equal, Type};
-
-    use super::unify;
-
-    fn func(t1: Type, t2: Type) -> Type {
-        Type::Func(Box::new(t1), Box::new(t2))
-    }
-
-    #[test]
-    fn test() -> anyhow::Result<()> {
-        use Type::*;
-        assert_eq!(unify(vec![Equal(Variable(0), Int)])?, [(0, Int)].into(),);
-        assert_eq!(unify(vec![Equal(Bool, Variable(0))])?, [(0, Bool)].into(),);
-        assert_eq!(
-            unify(vec![Equal(func(Int, Bool), func(Variable(0), Variable(1)))])?,
-            [(0, Int), (1, Bool)].into(),
-        );
-        assert_eq!(
-            unify(vec![Equal(
-                func(Variable(0), Int),
-                func(Variable(1), Variable(0))
-            )])?,
-            [(0, Int), (1, Int)].into(),
-        );
-        assert_eq!(
-            unify(vec![
-                Equal(
-                    func(Variable(0), Variable(0)),
-                    func(Variable(1), Variable(2))
-                ),
-                Equal(Variable(2), Bool),
-            ])?,
-            [(0, Bool), (1, Bool), (2, Bool)].into(),
-        );
-        Ok(())
+        _ => Err(TypeError::Unimplemented),
     }
 }

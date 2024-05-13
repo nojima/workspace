@@ -1,6 +1,8 @@
 use std::rc::Rc;
 
+use im::hashmap;
 use rustyline::{error::ReadlineError, DefaultEditor};
+use typing::{Environment, Type};
 
 use crate::value::{Frame, Value};
 
@@ -11,7 +13,6 @@ mod parser;
 mod span;
 mod symbol;
 mod token;
-mod types;
 mod typing;
 mod value;
 
@@ -35,22 +36,30 @@ fn main() -> anyhow::Result<()> {
     }
 }
 
-fn initial_frame() -> Frame {
-    Frame {
-        parent: Some(Rc::new(Frame {
-            parent: None,
-            v_name: "succ".into(),
-            v_value: Value::BuiltinFunction("succ".into(), |v| match v {
-                Value::Integer(n) => Ok(Value::Integer(n + 1)),
+fn initial_frame() -> (Frame, Environment) {
+    let t_int = Type::Simple("Int".into());
+    let t_bool = Type::Simple("Bool".into());
+    (
+        Frame {
+            parent: Some(Rc::new(Frame {
+                parent: None,
+                v_name: "succ".into(),
+                v_value: Value::BuiltinFunction("succ".into(), |v| match v {
+                    Value::Integer(n) => Ok(Value::Integer(n + 1)),
+                    _ => Err("unexpected type".into()),
+                }),
+            })),
+            v_name: "iszero".into(),
+            v_value: Value::BuiltinFunction("iszero".into(), |v| match v {
+                Value::Integer(n) => Ok(Value::Bool(n == 0)),
                 _ => Err("unexpected type".into()),
             }),
-        })),
-        v_name: "iszero".into(),
-        v_value: Value::BuiltinFunction("iszero".into(), |v| match v {
-            Value::Integer(n) => Ok(Value::Bool(n == 0)),
-            _ => Err("unexpected type".into()),
-        }),
-    }
+        },
+        hashmap! {
+            "succ".into() => Type::Function(Box::new(t_int.clone()), Box::new(t_bool.clone())),
+            "iszero".into() => Type::Function(Box::new(t_int.clone()), Box::new(t_bool.clone())),
+        },
+    )
 }
 
 fn do_eval(input: &str) -> anyhow::Result<()> {
@@ -58,16 +67,16 @@ fn do_eval(input: &str) -> anyhow::Result<()> {
     let tokens: Vec<_> = token_and_spans.into_iter().map(|(t, _)| t).collect();
     let ast = parser::parse(&tokens)?;
     println!("AST = {:?}", ast);
-    match typing::primary_type(&ast) {
-        Ok((env, t)) => {
-            println!("Env = {:?}", env);
+    let (frame, env) = initial_frame();
+    match typing::type_of(&env, &ast) {
+        Ok(t) => {
             println!("Type = {}", t);
         }
         Err(e) => {
             println!("Failed to type-check: {e}")
         }
     }
-    let value = eval::eval(&ast, Rc::new(initial_frame()))?;
+    let value = eval::eval(&ast, Rc::new(frame))?;
     println!("Value = {:?}", value);
     Ok(())
 }

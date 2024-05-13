@@ -46,9 +46,7 @@ pub fn eval(expr: &Expr, frame: Rc<Frame>) -> Result<Value> {
             let f = eval(expr1, Rc::clone(&frame))?;
             let arg = eval(expr2, frame)?;
             match f {
-                Value::BuiltinFunction(_, f) => {
-                    f(arg).map_err(|e| EvalError::GeneralError(e))
-                }
+                Value::BuiltinFunction(_, f) => f(arg).map_err(|e| EvalError::GeneralError(e)),
                 Value::Closure(closure) => {
                     let new_frame = Rc::new(Frame {
                         parent: Some(Rc::clone(&closure.frame)),
