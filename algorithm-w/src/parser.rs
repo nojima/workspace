@@ -63,9 +63,9 @@ pub fn parse(tokens: &[Token]) -> Result<Box<Expr>> {
 
 // expr ::=
 //   | term
-//   | expr term
 //   | expr "+" term
 //   | expr "==" term
+// TODO: 演算子の優先順位を実装する
 fn parse_expr(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
     let (mut expr, mut tokens) = parse_term(tokens)?;
     loop {
@@ -83,27 +83,42 @@ fn parse_expr(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
                 expr = Box::new(Expr::BinOp(BinOp::Eq, expr, expr_));
                 tokens = tokens_;
             }
-            _ => match parse_term(tokens) {
-                Ok((expr_, tokens_)) => {
-                    expr = Box::new(Expr::Apply(expr, expr_));
-                    tokens = tokens_;
-                }
-                Err(_) => break,
-            },
+            _ => break,
         }
     }
     Ok((expr, tokens))
 }
 
 // term ::=
-//   | bool
-//   | integer
-//   | identifier
-//   | "(" expr ")"
+//   | factor
+//   | factor factor...
 //   | "[" identifier "]" expr
 //   | "if" expr "then" expr "else" expr
 //   | "let" "rec"? identifier "=" expr ";" expr
 fn parse_term(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
+    let (token, tokens_) = take_one(tokens)?;
+    match token {
+        Token::LBracket => parse_lambda(tokens_),
+        Token::If => parse_if(tokens_),
+        Token::Let => parse_let(tokens_),
+        _ => {
+            // factor | factor factor...
+            let (mut expr, mut tokens) = parse_factor(tokens)?;
+            while let Ok((expr_, tokens_)) = parse_factor(tokens) {
+                expr = Box::new(Expr::Apply(expr, expr_));
+                tokens = tokens_;
+            }
+            Ok((expr, tokens))
+        }
+    }
+}
+
+// factor ::=
+//   | bool
+//   | integer
+//   | identifier
+//   | "(" expr ")"
+fn parse_factor(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
     let (token, tokens) = take_one(tokens)?;
     match token {
         Token::True => ok(Expr::Bool(true), tokens),
@@ -111,9 +126,6 @@ fn parse_term(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
         Token::Int(n) => ok(Expr::Int(*n), tokens),
         Token::Identifier(ident) => ok(Expr::Variable(ident.clone()), tokens),
         Token::LParen => parse_paren(tokens),
-        Token::LBracket => parse_lambda(tokens),
-        Token::If => parse_if(tokens),
-        Token::Let => parse_let(tokens),
         t => return Err(ParseError::UnexpectedToken(t.clone())),
     }
 }

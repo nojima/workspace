@@ -26,7 +26,7 @@ pub enum Token {
     LBrace,
     RBrace,
     Plus,
-    Minus,
+    //Minus,
     Asterisk,
     Slash,
     Percent,

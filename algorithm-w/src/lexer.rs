@@ -53,7 +53,7 @@ fn lex_one(input: &str) -> LexResult {
         '{' => return ok(Token::LBrace, 1),
         '}' => return ok(Token::RBrace, 1),
         '+' => return ok(Token::Plus, 1),
-        '-' => return ok(Token::Minus, 1),
+        //'-' => return ok(Token::Minus, 1),
         '*' => return ok(Token::Asterisk, 1),
         '/' => return ok(Token::Slash, 1),
         '%' => return ok(Token::Percent, 1),
@@ -104,7 +104,7 @@ fn lex_one(input: &str) -> LexResult {
         return ok(token, m.end());
     }
 
-    let re_integer = static_regex!(r"^[0-9]+");
+    let re_integer = static_regex!(r"^-?[0-9]+");
     if let Some(m) = re_integer.find(input) {
         let n = i64::from_str(m.as_str()).unwrap();
         return ok(Token::Int(n), m.end());
