@@ -98,8 +98,7 @@ fn lex_one(input: &str) -> LexResult {
             "then" => Token::Then,
             "else" => Token::Else,
             "let" => Token::Let,
-            "in" => Token::In,
-            "lambda" => Token::Lambda,
+            "rec" => Token::Rec,
             _ => Token::Identifier(s.to_owned().into()),
         };
         return ok(token, m.end());

@@ -13,8 +13,7 @@ pub enum Token {
     Then,
     Else,
     Let,
-    In,
-    Lambda,
+    Rec,
 
     Dot,
     Colon,

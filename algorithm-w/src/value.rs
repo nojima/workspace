@@ -1,5 +1,7 @@
 use std::{fmt::Display, rc::Rc};
 
+use once_cell::sync::OnceCell;
+
 use crate::{ast::Expr, symbol::Symbol};
 
 #[derive(Debug, Clone)]
@@ -8,6 +10,7 @@ pub enum Value {
     Integer(i64),
     Closure(Rc<Closure>),
     BuiltinFunction(Symbol, fn(Value) -> Result<Value, String>),
+    Deferred(Box<OnceCell<Value>>)
 }
 
 impl Display for Value {
@@ -17,6 +20,10 @@ impl Display for Value {
             Value::Integer(n) => write!(f, "{n}"),
             Value::Closure(c) => write!(f, "<closure {:p}>", c),
             Value::BuiltinFunction(name, _) => write!(f, "<builtin function {}>", name),
+            Value::Deferred(v) => match v.get() {
+                Some(v) => v.fmt(f),
+                None => write!(f, "<deferred>"),
+            }
         }
     }
 }

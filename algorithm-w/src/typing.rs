@@ -7,7 +7,7 @@ use std::{
 };
 
 use crate::{
-    ast::{BinOp, Expr},
+    ast::{BinOp, Expr, LetType},
     symbol::Symbol,
 };
 
@@ -269,10 +269,21 @@ pub fn type_of(env: &Environment, expr: &Expr, level: Level) -> Result<Type, Typ
             unify(&fun_type1, &fun_type2)?;
             Ok(ret_type)
         }
-        Expr::Let(name, expr1, expr2) => {
-            let expr1_type = type_of(env, expr1, level + 1)?;
-            let expr2_env = env.update(*name, expr1_type.generalize(level));
-            type_of(&expr2_env, expr2, level)
+        Expr::Let(name, expr1, expr2, let_type) => {
+            match let_type {
+                LetType::Normal => {
+                    let expr1_type = type_of(env, expr1, level + 1)?;
+                    let expr2_env = env.update(*name, expr1_type.generalize(level));
+                    type_of(&expr2_env, expr2, level)
+                }
+                LetType::Rec => {
+                    let t = Type::fresh(level);
+                    let expr1_env = env.update(*name, t.clone());
+                    let expr1_type = type_of(&expr1_env, expr1, level + 1)?;
+                    unify(&t, &expr1_type)?;
+                    type_of(&expr1_env, expr2, level)
+                }
+            }
         }
     }
 }

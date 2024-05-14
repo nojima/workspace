@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
-    ast::{BinOp, Expr},
+    ast::{BinOp, Expr, LetType},
     token::Token,
 };
 
@@ -40,6 +40,17 @@ macro_rules! take_exact {
             ));
         };
     };
+}
+
+macro_rules! take_one_if_match {
+    ($pattern:pat, $tokens:ident) => {{
+        let (token, tokens) = take_one($tokens)?;
+        if let $pattern = token {
+            (Some(token), tokens)
+        } else {
+            (None, $tokens)
+        }
+    }};
 }
 
 pub fn parse(tokens: &[Token]) -> Result<Box<Expr>> {
@@ -91,7 +102,7 @@ fn parse_expr(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
 //   | "(" expr ")"
 //   | "[" identifier "]" expr
 //   | "if" expr "then" expr "else" expr
-//   | "let" identifier "=" expr ";" expr
+//   | "let" "rec"? identifier "=" expr ";" expr
 fn parse_term(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
     let (token, tokens) = take_one(tokens)?;
     match token {
@@ -134,13 +145,23 @@ fn parse_if(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
     ok(if_expr, tokens)
 }
 
-// "let" identifier "=" expr ";" expr
+// "let" "rec"? identifier "=" expr ";" expr
 fn parse_let(tokens: &[Token]) -> Result<(Box<Expr>, &[Token])> {
+    let (t_rec, tokens) = take_one_if_match!(Token::Rec, tokens);
     take_exact!(Token::Identifier(t_ident), tokens, "identifier");
     take_exact!(Token::Eq, tokens, "'='");
     let (bound_expr, tokens) = parse_expr(tokens)?;
     take_exact!(Token::Semicolon, tokens, "';'");
     let (body_expr, tokens) = parse_expr(tokens)?;
-    let let_expr = Expr::Let(t_ident.clone(), bound_expr, body_expr);
+    let let_expr = Expr::Let(
+        t_ident.clone(),
+        bound_expr,
+        body_expr,
+        if t_rec.is_some() {
+            LetType::Rec
+        } else {
+            LetType::Normal
+        },
+    );
     ok(let_expr, tokens)
 }

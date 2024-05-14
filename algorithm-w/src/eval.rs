@@ -1,7 +1,9 @@
 use std::rc::Rc;
 
+use once_cell::sync::OnceCell;
+
 use crate::{
-    ast::{BinOp, Expr},
+    ast::{BinOp, Expr, LetType},
     symbol::Symbol,
     value::{Closure, Frame, Value},
 };
@@ -39,7 +41,10 @@ pub fn eval(expr: &Expr, frame: Rc<Frame>) -> Result<Value> {
             Ok(Value::Closure(Rc::new(closure)))
         }
         Expr::Variable(name) => match frame.lookup(*name) {
-            Some(value) => Ok(value),
+            Some(value) => match value {
+                Value::Deferred(value) => Ok(value.get().unwrap().clone()),
+                _ => Ok(value),
+            }
             None => Err(EvalError::UndefinedVariable(name.clone())),
         },
         Expr::Apply(expr1, expr2) => {
@@ -69,15 +74,30 @@ pub fn eval(expr: &Expr, frame: Rc<Frame>) -> Result<Value> {
                 eval(&else_expr, frame)
             }
         }
-        Expr::Let(name, bound_expr, body_expr) => {
-            let bound_value = eval(&bound_expr, Rc::clone(&frame))?;
-            let new_frame = Rc::new(Frame {
-                parent: Some(frame),
-                v_name: name.clone(),
-                v_value: bound_value,
-            });
-            eval(&body_expr, new_frame)
-        }
+        Expr::Let(name, bound_expr, body_expr, let_type) => match let_type {
+            LetType::Normal => {
+                let bound_value = eval(&bound_expr, Rc::clone(&frame))?;
+                let new_frame = Rc::new(Frame {
+                    parent: Some(frame),
+                    v_name: name.clone(),
+                    v_value: bound_value,
+                });
+                eval(&body_expr, new_frame)
+            }
+            LetType::Rec => {
+                let new_frame = Rc::new(Frame {
+                    parent: Some(frame),
+                    v_name: name.clone(),
+                    v_value: Value::Deferred(Box::new(OnceCell::new())),
+                });
+                let bound_value = eval(&bound_expr, Rc::clone(&new_frame))?;
+                let Value::Deferred(ref deferred) = new_frame.v_value else {
+                    panic!()
+                };
+                deferred.set(bound_value).unwrap();
+                eval(&body_expr, new_frame)
+            }
+        },
         Expr::BinOp(op, lhs_expr, rhs_expr) => {
             let lhs_value = eval(lhs_expr, Rc::clone(&frame))?;
             let rhs_value = eval(rhs_expr, frame)?;
