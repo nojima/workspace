@@ -6,7 +6,10 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::{ast::Expr, symbol::Symbol};
+use crate::{
+    ast::{BinOp, Expr},
+    symbol::Symbol,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type {
@@ -158,9 +161,6 @@ pub enum TypeError {
 
     #[error("occurs check failure")]
     OccursCheckFailure,
-
-    #[error("unimplemented")]
-    Unimplemented,
 }
 
 pub fn unify(t1: &Type, t2: &Type) -> Result<(), TypeError> {
@@ -223,18 +223,43 @@ pub fn occurs_check(var: &Variable, t: &Type, level: Level) -> Result<(), TypeEr
 
 pub fn type_of(env: &Environment, expr: &Expr, level: Level) -> Result<Type, TypeError> {
     match expr {
-        Expr::Variable(name) => {
-            let Some(t) = env.get(name) else {
-                return Err(TypeError::UndefinedVariable(*name));
-            };
-            Ok(t.instanciate(level))
-        }
+        Expr::Bool(_) => Ok(bool()),
+        Expr::Int(_) => Ok(int()),
         Expr::Lambda(param_name, body_expr) => {
             let param_type = Type::fresh(level);
             let body_env = env.update(*param_name, param_type.clone());
             let body_type = type_of(&body_env, body_expr, level)?;
             let t = Type::Function(Box::new(param_type), Box::new(body_type));
             Ok(t)
+        }
+        Expr::Variable(name) => {
+            let Some(t) = env.get(name) else {
+                return Err(TypeError::UndefinedVariable(*name));
+            };
+            Ok(t.instanciate(level))
+        }
+        Expr::If(cond_expr, then_expr, else_expr) => {
+            let cond_type = type_of(env, cond_expr, level)?;
+            let then_type = type_of(env, then_expr, level)?;
+            let else_type = type_of(env, else_expr, level)?;
+            unify(&cond_type, &bool())?;
+            unify(&then_type.clone(), &else_type)?;
+            Ok(then_type)
+        }
+        Expr::BinOp(op, expr1, expr2) => {
+            let type1 = type_of(env, expr1, level)?;
+            let type2 = type_of(env, expr2, level)?;
+            match op {
+                BinOp::Add => {
+                    unify(&type1, &int())?;
+                    unify(&type2, &int())?;
+                    Ok(int())
+                }
+                BinOp::Eq => {
+                    unify(&type1.clone(), &type2)?;
+                    Ok(bool())
+                }
+            }
         }
         Expr::Apply(expr1, expr2) => {
             let fun_type1 = type_of(env, expr1, level)?;
@@ -249,8 +274,5 @@ pub fn type_of(env: &Environment, expr: &Expr, level: Level) -> Result<Type, Typ
             let expr2_env = env.update(*name, expr1_type.generalize(level));
             type_of(&expr2_env, expr2, level)
         }
-        Expr::Int(_) => Ok(int()),
-        Expr::Bool(_) => Ok(bool()),
-        _ => Err(TypeError::Unimplemented),
     }
 }

@@ -77,7 +77,7 @@ fn do_eval(input: &str) -> anyhow::Result<()> {
         }
     }
     let value = eval::eval(&ast, Rc::new(frame))?;
-    println!("Value = {:?}", value);
+    println!("Value = {value}");
     Ok(())
 }
 
