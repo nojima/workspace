@@ -68,7 +68,7 @@ fn do_eval(input: &str) -> anyhow::Result<()> {
     let ast = parser::parse(&tokens)?;
     println!("AST = {:?}", ast);
     let (frame, env) = initial_frame();
-    match typing::type_of(&env, &ast) {
+    match typing::type_of(&env, &ast, 0) {
         Ok(t) => {
             println!("Type = {}", t);
         }

@@ -25,35 +25,41 @@ pub fn bool() -> Type {
 }
 
 impl Type {
-    pub fn fresh() -> Type {
-        Type::Variable(Rc::new(RefCell::new(Variable::fresh())))
+    pub fn fresh(level: Level) -> Type {
+        Type::Variable(Rc::new(RefCell::new(Variable::fresh(level))))
     }
 
-    // この型に含まれるすべての Variable を Quantified に変換した型を返す
-    // (unsound!)
-    pub fn generalize(&self) -> Type {
+    // この型に含まれる current_level より大きいレベルの Variable を Quantified に変換した型を返す
+    pub fn generalize(&self, current_level: Level) -> Type {
         match self {
             Type::Variable(var) => {
                 let var = var.borrow();
                 match *var {
-                    Variable::Unbound(id) => Type::Quantified(id),
-                    Variable::Bound(ref t) => t.generalize(),
+                    Variable::Unbound(id, level) => {
+                        if level > current_level {
+                            Type::Quantified(id)
+                        } else {
+                            self.clone()
+                        }
+                    }
+                    Variable::Bound(ref t) => t.generalize(current_level),
                 }
             }
-            Type::Function(t1, t2) => {
-                Type::Function(Box::new(t1.generalize()), Box::new(t2.generalize()))
-            }
+            Type::Function(t1, t2) => Type::Function(
+                Box::new(t1.generalize(current_level)),
+                Box::new(t2.generalize(current_level)),
+            ),
             _ => self.clone(),
         }
     }
 
     // この型に含まれる Quantified をすべて fresh な Variable に置き換えた型を返す
-    pub fn instanciate(&self) -> Type {
+    pub fn instanciate(&self, level: Level) -> Type {
         let mut memo = HashMap::new();
-        self.instanciate_(&mut memo)
+        self.instanciate_(level, &mut memo)
     }
 
-    fn instanciate_(&self, memo: &mut HashMap<usize, Rc<RefCell<Variable>>>) -> Type {
+    fn instanciate_(&self, level: Level, memo: &mut HashMap<usize, Rc<RefCell<Variable>>>) -> Type {
         match self {
             Type::Quantified(id) => match memo.entry(*id) {
                 Entry::Occupied(entry) => {
@@ -61,15 +67,15 @@ impl Type {
                     Type::Variable(Rc::clone(var_ref))
                 }
                 Entry::Vacant(entry) => {
-                    let var = Variable::fresh();
+                    let var = Variable::fresh(level);
                     let var_ref = Rc::new(RefCell::new(var));
                     entry.insert(Rc::clone(&var_ref));
                     Type::Variable(var_ref)
                 }
             },
             Type::Function(t1, t2) => Type::Function(
-                Box::new(t1.instanciate_(memo)),
-                Box::new(t2.instanciate_(memo)),
+                Box::new(t1.instanciate_(level, memo)),
+                Box::new(t2.instanciate_(level, memo)),
             ),
             _ => self.clone(),
         }
@@ -78,29 +84,47 @@ impl Type {
 
 impl Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Type::Simple(name) => name.fmt(f),
-            Type::Function(a, b) => write!(f, "({a} -> {b})"),
-            Type::Variable(v) => match *v.borrow() {
-                Variable::Unbound(id) => write!(f, "τ{id}"),
-                Variable::Bound(ref t) => t.fmt(f),
-            },
-            Type::Quantified(id) => write!(f, "α{id}"),
+        fn format(t: &Type, f: &mut std::fmt::Formatter<'_>, paren: bool) -> std::fmt::Result {
+            match t {
+                Type::Simple(name) => name.fmt(f),
+                Type::Function(a, b) => {
+                    if paren {
+                        write!(f, "(")?;
+                        format(a, f, true)?;
+                        write!(f, " -> ")?;
+                        format(b, f, false)?;
+                        write!(f, ")")
+                    } else {
+                        format(a, f, true)?;
+                        write!(f, " -> ")?;
+                        format(b, f, false)
+                    }
+                }
+                Type::Variable(v) => match *v.borrow() {
+                    Variable::Unbound(id, _) => write!(f, "τ{id}"),
+                    Variable::Bound(ref t) => format(t, f, paren),
+                },
+                Type::Quantified(id) => write!(f, "α{id}"),
+            }
         }
+        format(self, f, false)
     }
 }
 
+type VariableID = usize;
+type Level = usize;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Variable {
-    Unbound(usize),
+    Unbound(VariableID, Level),
     Bound(Type),
 }
 
 impl Variable {
-    pub fn fresh() -> Variable {
+    pub fn fresh(level: Level) -> Variable {
         static NEXT_VARIABLE_ID: AtomicUsize = AtomicUsize::new(0);
         let id = NEXT_VARIABLE_ID.fetch_add(1, Ordering::SeqCst);
-        Variable::Unbound(id)
+        Variable::Unbound(id, level)
     }
 }
 
@@ -137,8 +161,8 @@ pub fn unify(t1: &Type, t2: &Type) -> Result<(), TypeError> {
         (Type::Variable(v), t) | (t, Type::Variable(v)) => {
             let mut v = v.borrow_mut();
             match *v {
-                Variable::Unbound(_) => {
-                    occurs_check(&v, t)?;
+                Variable::Unbound(_, level) => {
+                    occurs_check(&v, t, level)?;
                     *v = Variable::Bound(t.clone());
                 }
                 Variable::Bound(ref tt) => {
@@ -152,56 +176,60 @@ pub fn unify(t1: &Type, t2: &Type) -> Result<(), TypeError> {
     }
 }
 
-// t の中に var が出現していたらエラーを返す
-pub fn occurs_check(var: &Variable, t: &Type) -> Result<(), TypeError> {
+// t の中に var が出現していたらエラーを返す。
+// また、t の中に level より大きいレベルの型変数が出現していたら、その変数のレベルを level に変更する。
+pub fn occurs_check(var: &Variable, t: &Type, level: Level) -> Result<(), TypeError> {
     match t {
         Type::Variable(var2) => {
-            let var2 = var2.borrow();
+            let mut var2 = var2.borrow_mut();
             if std::ptr::eq(var, &*var2) {
                 return Err(TypeError::OccursCheckFailure);
             }
-            if let Variable::Bound(ref t2) = *var2 {
-                occurs_check(var, t2)
-            } else {
-                Ok(())
+            match *var2 {
+                Variable::Bound(ref t2) => occurs_check(var, t2, level),
+                Variable::Unbound(id2, level2) if level2 > level => {
+                    *var2 = Variable::Unbound(id2, level);
+                    Ok(())
+                }
+                _ => Ok(()),
             }
         }
         Type::Function(t1, t2) => {
-            occurs_check(var, t1)?;
-            occurs_check(var, t2)?;
+            occurs_check(var, t1, level)?;
+            occurs_check(var, t2, level)?;
             Ok(())
         }
         _ => Ok(()),
     }
 }
 
-pub fn type_of(env: &Environment, expr: &Expr) -> Result<Type, TypeError> {
+pub fn type_of(env: &Environment, expr: &Expr, level: Level) -> Result<Type, TypeError> {
     match expr {
         Expr::Variable(name) => {
             let Some(t) = env.get(name) else {
                 return Err(TypeError::UndefinedVariable(*name));
             };
-            Ok(t.instanciate())
+            Ok(t.instanciate(level))
         }
         Expr::Lambda(param_name, body_expr) => {
-            let param_type = Type::fresh();
+            let param_type = Type::fresh(level);
             let body_env = env.update(*param_name, param_type.clone());
-            let body_type = type_of(&body_env, body_expr)?;
+            let body_type = type_of(&body_env, body_expr, level)?;
             let t = Type::Function(Box::new(param_type), Box::new(body_type));
             Ok(t)
         }
         Expr::Apply(expr1, expr2) => {
-            let fun_type1 = type_of(env, expr1)?;
-            let arg_type = type_of(env, expr2)?;
-            let ret_type = Type::fresh();
+            let fun_type1 = type_of(env, expr1, level)?;
+            let arg_type = type_of(env, expr2, level)?;
+            let ret_type = Type::fresh(level);
             let fun_type2 = Type::Function(Box::new(arg_type), Box::new(ret_type.clone()));
             unify(&fun_type1, &fun_type2)?;
             Ok(ret_type)
         }
         Expr::Let(name, expr1, expr2) => {
-            let expr1_type = type_of(env, expr1)?;
-            let expr2_env = env.update(*name, expr1_type.generalize());
-            type_of(&expr2_env, expr2)
+            let expr1_type = type_of(env, expr1, level + 1)?;
+            let expr2_env = env.update(*name, expr1_type.generalize(level));
+            type_of(&expr2_env, expr2, level)
         }
         Expr::Int(_) => Ok(int()),
         Expr::Bool(_) => Ok(bool()),
