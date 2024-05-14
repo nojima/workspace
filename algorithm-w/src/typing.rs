@@ -84,30 +84,48 @@ impl Type {
 
 impl Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fn format(t: &Type, f: &mut std::fmt::Formatter<'_>, paren: bool) -> std::fmt::Result {
+        fn generate_name(n: usize) -> Symbol {
+            if n < 26 {
+                Symbol::from(String::from((b'a' + n as u8) as char))
+            } else {
+                Symbol::from(format!("τ{}", n - 26))
+            }
+        }
+
+        fn format(
+            t: &Type,
+            f: &mut std::fmt::Formatter<'_>,
+            paren: bool,
+            names: &mut HashMap<VariableID, Symbol>,
+        ) -> std::fmt::Result {
             match t {
                 Type::Simple(name) => name.fmt(f),
                 Type::Function(a, b) => {
                     if paren {
                         write!(f, "(")?;
-                        format(a, f, true)?;
+                        format(a, f, true, names)?;
                         write!(f, " -> ")?;
-                        format(b, f, false)?;
+                        format(b, f, false, names)?;
                         write!(f, ")")
                     } else {
-                        format(a, f, true)?;
+                        format(a, f, true, names)?;
                         write!(f, " -> ")?;
-                        format(b, f, false)
+                        format(b, f, false, names)
                     }
                 }
                 Type::Variable(v) => match *v.borrow() {
-                    Variable::Unbound(id, _) => write!(f, "τ{id}"),
-                    Variable::Bound(ref t) => format(t, f, paren),
+                    Variable::Unbound(id, _) => {
+                        let name = generate_name(names.len());
+                        names.insert(id, name.clone());
+                        name.fmt(f)
+                    }
+                    Variable::Bound(ref t) => format(t, f, paren, names),
                 },
                 Type::Quantified(id) => write!(f, "α{id}"),
             }
         }
-        format(self, f, false)
+
+        format(self, f, false, &mut HashMap::new())
     }
 }
 
