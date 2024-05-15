@@ -32,6 +32,10 @@ impl Type {
         Type::Variable(Rc::new(RefCell::new(Variable::fresh(level))))
     }
 
+    pub fn unbound_variable(id: usize, level: Level) -> Type {
+        Type::Variable(Rc::new(RefCell::new(Variable::Unbound(id, level))))
+    }
+
     // この型に含まれる current_level より大きいレベルの Variable を Quantified に変換した型を返す
     pub fn generalize(&self, current_level: Level) -> Type {
         match self {
@@ -116,14 +120,20 @@ impl Display for Type {
                         format(b, f, false, names)
                     }
                 }
-                Type::Variable(v) => match *v.borrow() {
-                    Variable::Unbound(id, _) => {
-                        let name = generate_name(names.len());
-                        names.insert(id, name.clone());
-                        name.fmt(f)
+                Type::Variable(v) => {
+                    let n = names.len();
+                    match *v.borrow() {
+                        Variable::Unbound(id, _) => match names.entry(id) {
+                            Entry::Occupied(entry) => entry.get().fmt(f),
+                            Entry::Vacant(entry) => {
+                                let name = generate_name(n);
+                                entry.insert(name.clone());
+                                name.fmt(f)
+                            }
+                        },
+                        Variable::Bound(ref t) => format(t, f, paren, names),
                     }
-                    Variable::Bound(ref t) => format(t, f, paren, names),
-                },
+                }
                 Type::Quantified(id) => write!(f, "α{id}"),
             }
         }
@@ -154,7 +164,7 @@ pub type Environment = im::HashMap<Symbol, Type>;
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum TypeError {
     #[error("failed to unify: {0} and {1}")]
-    FailedToUnify(Type, Type),
+    FailedToUnify(String, String),
 
     #[error("undefined variable: {0}")]
     UndefinedVariable(Symbol),
@@ -190,7 +200,7 @@ pub fn unify(t1: &Type, t2: &Type) -> Result<(), TypeError> {
             return Ok(());
         }
 
-        _ => return Err(TypeError::FailedToUnify(t1.clone(), t2.clone())),
+        _ => return Err(TypeError::FailedToUnify(t1.to_string(), t2.to_string())),
     }
 }
 
@@ -269,21 +279,65 @@ pub fn type_of(env: &Environment, expr: &Expr, level: Level) -> Result<Type, Typ
             unify(&fun_type1, &fun_type2)?;
             Ok(ret_type)
         }
-        Expr::Let(name, expr1, expr2, let_type) => {
-            match let_type {
-                LetType::Normal => {
-                    let expr1_type = type_of(env, expr1, level + 1)?;
-                    let expr2_env = env.update(*name, expr1_type.generalize(level));
-                    type_of(&expr2_env, expr2, level)
-                }
-                LetType::Rec => {
-                    let t = Type::fresh(level);
-                    let expr1_env = env.update(*name, t.clone());
-                    let expr1_type = type_of(&expr1_env, expr1, level + 1)?;
-                    unify(&t, &expr1_type)?;
-                    type_of(&expr1_env, expr2, level)
-                }
+        Expr::Let(name, expr1, expr2, let_type) => match let_type {
+            LetType::Normal => {
+                let expr1_type = type_of(env, expr1, level + 1)?;
+                let expr2_env = env.update(*name, expr1_type.generalize(level));
+                type_of(&expr2_env, expr2, level)
             }
-        }
+            LetType::Rec => {
+                let t = Type::fresh(level);
+                let expr1_env = env.update(*name, t.clone());
+                let expr1_type = type_of(&expr1_env, expr1, level + 1)?;
+                unify(&t, &expr1_type)?;
+                type_of(&expr1_env, expr2, level)
+            }
+        },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::typing::{bool, int, Type};
+
+    use super::type_of;
+
+    fn check(input: &str, expected: &str) -> anyhow::Result<()> {
+        let env = im::hashmap! {
+            "succ".into() => Type::Function(Box::new(int()), Box::new(int())),
+            "iszero".into() => Type::Function(Box::new(int()), Box::new(bool())),
+        };
+        let token_and_spans = crate::lexer::lex(input)?;
+        let tokens: Vec<_> = token_and_spans.into_iter().map(|(t, _)| t).collect();
+        let ast = crate::parser::parse(&tokens)?;
+        let t = type_of(&env, &ast, 0)?;
+        assert_eq!(t.to_string(), expected, "input: {input}");
+        Ok(())
+    }
+
+    #[test]
+    fn test_type_of() -> anyhow::Result<()> {
+        check("0", "Int")?;
+        check("true", "Bool")?;
+        check("1 + 2", "Int")?;
+        check("0 == 0", "Bool")?;
+        check("if 0 == 0 then 1 else 0", "Int")?;
+        check("if iszero 0 then 1 else 0", "Int")?;
+        check("[x] x", "a -> a")?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_type_generalize() {
+        let t = Type::unbound_variable(42, 1);
+        assert_eq!(t.generalize(0), Type::Quantified(42));
+        // TODO
+    }
+
+    #[test]
+    fn test_type_instanciate() {
+        let t = Type::Quantified(42);
+        assert_eq!(t.instanciate(0).to_string(), "a");
+        // TODO
     }
 }
