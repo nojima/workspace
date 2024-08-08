@@ -1,55 +1,54 @@
 use std::mem::swap;
 
-pub enum SkewHeap<T: Ord> {
-    Empty,
-    Node(SkewNode<T>),
-}
-
-pub struct SkewNode<T: Ord> {
-    x: T,
-    l: Box<SkewHeap<T>>,
-    r: Box<SkewHeap<T>>,
+pub struct SkewHeap<T: Ord> {
+    root: Option<Box<Node<T>>>,
 }
 
 impl<T: Ord> SkewHeap<T> {
-    pub fn singleton(x: T) -> SkewHeap<T> {
-        Self::Node(SkewNode {
-            x,
-            l: Box::new(Self::Empty),
-            r: Box::new(Self::Empty),
-        })
+    pub fn new() -> Self {
+        Self { root: None }
     }
 
     pub fn is_empty(&self) -> bool {
-        match self {
-            Self::Empty => true,
-            _ => false,
-        }
+        self.root.is_none()
     }
 
-    pub fn push(self, x: T) -> SkewHeap<T> {
-        Self::merge(self, Self::singleton(x))
+    pub fn push(&mut self, x: T) {
+        self.root = Node::merge(self.root.take(), Node::singleton(x));
     }
 
-    pub fn pop_min(self) -> (Option<T>, SkewHeap<T>) {
-        match self {
-            Self::Empty => (None, self),
-            Self::Node(node) => (Some(node.x), Self::merge(*node.l, *node.r)),
-        }
+    pub fn pop_min(&mut self) -> Option<T> {
+        let root = self.root.take()?;
+        let x = root.x;
+        self.root = Node::merge(root.l, root.r);
+        Some(x)
+    }
+}
+
+pub struct Node<T: Ord> {
+    x: T,
+    l: Option<Box<Node<T>>>,
+    r: Option<Box<Node<T>>>,
+}
+
+impl<T: Ord> Node<T> {
+    pub fn singleton(x: T) -> Option<Box<Node<T>>> {
+        Some(Box::new(Node {
+            x,
+            l: None,
+            r: None,
+        }))
     }
 
-    pub fn merge(a: SkewHeap<T>, b: SkewHeap<T>) -> SkewHeap<T> {
-        use SkewHeap::*;
+    pub fn merge(a: Option<Box<Node<T>>>, b: Option<Box<Node<T>>>) -> Option<Box<Node<T>>> {
         match (a, b) {
-            (Empty, b) => b,
-            (a, Empty) => a,
-            (Node(mut a), Node(mut b)) => {
-                if a.x > b.x {
-                    swap(&mut a, &mut b);
-                }
-                a.r = Box::new(Self::merge(*a.r, Node(b)));
+            (None, b) => b,
+            (a, None) => a,
+            (Some(a), Some(b)) => {
+                let (mut a, b) = if a.x < b.x { (a, b) } else { (b, a) };
+                a.r = Self::merge(a.r, Some(b));
                 swap(&mut a.l, &mut a.r);
-                Node(a)
+                Some(a)
             }
         }
     }
@@ -57,20 +56,20 @@ impl<T: Ord> SkewHeap<T> {
 
 #[cfg(test)]
 mod tests {
+    use crate::skewheap::SkewHeap;
+
     #[test]
     fn test_skew_heap() {
-        use super::SkewHeap;
-        let mut heap = SkewHeap::Empty;
+        let mut heap = SkewHeap::new();
         for x in [1, 1, 2, 2, 3, 3, 3, 3, 4, 4, 5, 5, 5, 6, 6, 7, 8, 8, 9, 9, 9] {
-            heap = heap.push(x);
+            heap.push(x);
         }
         let mut v = Vec::new();
         while !heap.is_empty() {
-            let (x, h) = heap.pop_min();
+            let x = heap.pop_min();
             let Some(x) = x else {
                 panic!("pop_min should return Some(x)");
             };
-            heap = h;
             v.push(x);
         }
         assert_eq!(v, vec![1, 1, 2, 2, 3, 3, 3, 3, 4, 4, 5, 5, 5, 6, 6, 7, 8, 8, 9, 9, 9]);
