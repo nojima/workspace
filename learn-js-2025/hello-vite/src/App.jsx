@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Container, PasswordInput, TextInput } from '@mantine/core';
 import { SHA256_init, SHA256_write, SHA256_finalize, HMAC_SHA256_init, HMAC_SHA256_write, HMAC_SHA256_finalize } from './jssha256';
 import './App.css'
 
@@ -32,6 +33,15 @@ function generatePassword(secret, domain) {
 }
 
 function App() {
+  const reducer = null;
+  const [state, setState] = useState({});
+  const dispatch = (message) => {
+    const [nextState, nextCommand] = reducer(message);
+    setState(nextState);
+    if (nextCommand != null) {
+    }
+  };
+
   const [secret, setSecret] = useState("");
   const [domain, setDomain] = useState("");
 
@@ -39,47 +49,44 @@ function App() {
   const password = generatePassword(secret, domain);
 
   return (
-    <>
+    <Container>
       <h1>Domain Password Generator</h1>
 
       <div className="input-secret">
-        <label htmlFor="secret">Secret:</label>
-        <input
-          name="secret"
+        <PasswordInput
+          label="Secret"
+          description={"checksum: " + checksum}
           id="secret"
-          type="password"
-          size="40"
+          width="40"
           autoFocus={true}
           value={secret}
-          onChange={e => setSecret(e.target.value)}
+          onChange={e => setSecret(e.currentTarget.value)}
         />
-        <p>checksum: <strong id="checksum">{checksum}</strong></p>
       </div>
 
       <div className="input-domain">
-        <label htmlFor="domain">Domain:</label>
-        <input
-          name="domain"
+        <TextInput
+          label="Domain"
           id="domain"
           type="url"
-          size="40"
+          width="40"
           value={domain}
-          onChange={e => setDomain(e.target.value)}
+          onChange={e => setDomain(e.currentTarget.value)}
         />
       </div>
 
       <div className="output-password">
-        <label htmlFor="password">Domain Password:</label>
-        <input
-          name="password"
+        <TextInput
+          variant="filled"
+          label="Domain Password"
           id="password"
           type="text"
-          size="16"
+          width="40"
           readOnly={true}
           value={password}
         />
       </div>
-    </>
+    </Container>
   );
 }
 
