@@ -1,0 +1,9 @@
+[package]
+name = "rust-ecdh-sample"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.95"
+base64 = "0.22.1"
+x25519-dalek = { version = "2.0.1", features = ["getrandom", "static_secrets"] }
