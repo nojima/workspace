@@ -1,0 +1,9 @@
+[package]
+name = "openssl-ecdh-sample"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.95"
+base64 = "0.22.1"
+openssl = "0.10.70"
