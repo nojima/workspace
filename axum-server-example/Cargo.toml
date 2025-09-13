@@ -1,0 +1,10 @@
+[package]
+name = "axum-server-example"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum-server = "0.7"
+hyper = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "signal", "macros"] }
+tower = { version = "0.5", features = ["util"] }
