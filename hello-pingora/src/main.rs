@@ -7,17 +7,15 @@ pub struct LB(Arc<LoadBalancer<RoundRobin>>);
 #[async_trait]
 impl ProxyHttp for LB {
     type CTX = ();
-    fn new_ctx(&self) -> () {
-        ()
-    }
+    fn new_ctx(&self) {}
 
     async fn upstream_peer(&self, _session: &mut Session, _ctx: &mut ()) -> Result<Box<HttpPeer>> {
         let upstream = self.0.select(b"", 256).unwrap();
 
         println!("upstream peer is: {:?}", upstream);
 
-        let peer = Box::new(HttpPeer::new(upstream, true, "one.one.one.one".to_string()));
-        Ok(peer)
+        let peer = HttpPeer::new(upstream, true, "one.one.one.one".to_string());
+        Ok(Box::new(peer))
     }
 
     async fn upstream_request_filter(
@@ -34,11 +32,13 @@ impl ProxyHttp for LB {
 }
 
 fn main() {
+    env_logger::init();
+
     let mut my_server = Server::new(Some(Opt::default())).unwrap();
     my_server.bootstrap();
 
     let mut upstreams =
-        LoadBalancer::try_from_iter(["1.1.1.1:443", "1.0.0.1:443", "127.0.0.1:343"]).unwrap();
+        LoadBalancer::try_from_iter(["1.1.1.1:443", "1.0.0.1:443"]).unwrap();
 
     let hc = TcpHealthCheck::new();
     upstreams.set_health_check(hc);
