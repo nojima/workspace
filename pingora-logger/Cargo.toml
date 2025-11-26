@@ -1,0 +1,13 @@
+[package]
+name = "pingora-logger"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+async-trait = "0.1"
+http = "1"
+pingora = { version = "0.6", features = ["lb"] }
+
+log = "0.4"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
