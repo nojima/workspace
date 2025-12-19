@@ -29,7 +29,9 @@ fn main() {
         bytes = &bytes[..],
     )
     .entered();
-    event!(Level::INFO, "event 2");
+
+    let binary = b"hoge hoge";
+    event!(Level::INFO, binary = &binary[..], "event 2");
 
     let _span2 = span!(Level::INFO, "span 2", bar = 42, pi = f64::consts::PI).entered();
     event!(Level::INFO, "event 3");

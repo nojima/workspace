@@ -43,9 +43,12 @@ where
                 serializer.serialize_entry("caller", &caller)?;
             }
 
-            let mut visitor = tracing_serde::SerdeMapVisitor::new(serializer);
+            let mut visitor = JsonSerializeVisitor {
+                serializer,
+                result: Ok(()),
+            };
             event.record(&mut visitor);
-            let mut serializer = visitor.take_serializer()?;
+            let mut serializer = visitor.serializer;
 
             let current_span = event
                 .parent()
@@ -108,7 +111,7 @@ where
         let span = ctx.span(id).expect("Span not found, this is a bug");
         let values = attrs.values();
 
-        let mut visitor = JsonVisitor {
+        let mut visitor = JsonRecordVisitor {
             values: Vec::with_capacity(values.len()),
         };
         values.record(&mut visitor);
@@ -131,7 +134,7 @@ where
     ) {
         let span = ctx.span(id).expect("Span not found, this is a bug");
 
-        let mut visitor = JsonVisitor {
+        let mut visitor = JsonRecordVisitor {
             values: Vec::with_capacity(record.len()),
         };
         record.record(&mut visitor);
@@ -151,69 +154,139 @@ struct ValuesExtension {
     values: Vec<(&'static str, serde_json::Value)>,
 }
 
-struct JsonVisitor {
+struct JsonRecordVisitor {
     values: Vec<(&'static str, serde_json::Value)>,
 }
 
-impl tracing::field::Visit for JsonVisitor {
+impl tracing::field::Visit for JsonRecordVisitor {
     fn record_debug(&mut self, field: &Field, value: &dyn core::fmt::Debug) {
-        if let Ok(v) = serde_json::to_value(format!("{value:?}")) {
-            self.values.push((field.name(), v));
-        }
+        let v = serde_json::Value::from(format!("{value:?}"));
+        self.values.push((field.name(), v));
     }
 
     fn record_f64(&mut self, field: &Field, value: f64) {
-        if let Ok(v) = serde_json::to_value(value) {
-            self.values.push((field.name(), v));
-        }
+        let v = serde_json::Value::from(value);
+        self.values.push((field.name(), v));
     }
 
     fn record_i64(&mut self, field: &Field, value: i64) {
-        if let Ok(v) = serde_json::to_value(value) {
-            self.values.push((field.name(), v));
-        }
+        let v = serde_json::Value::from(value);
+        self.values.push((field.name(), v));
     }
 
     fn record_u64(&mut self, field: &Field, value: u64) {
-        if let Ok(v) = serde_json::to_value(value) {
-            self.values.push((field.name(), v));
-        }
+        let v = serde_json::Value::from(value);
+        self.values.push((field.name(), v));
     }
 
     fn record_i128(&mut self, field: &Field, value: i128) {
-        if let Ok(v) = serde_json::to_value(value.to_string()) {
-            self.values.push((field.name(), v));
-        }
+        let v = serde_json::Value::from(value.to_string());
+        self.values.push((field.name(), v));
     }
 
     fn record_u128(&mut self, field: &Field, value: u128) {
-        if let Ok(v) = serde_json::to_value(value.to_string()) {
-            self.values.push((field.name(), v));
-        }
+        let v = serde_json::Value::from(value.to_string());
+        self.values.push((field.name(), v));
     }
 
     fn record_bool(&mut self, field: &Field, value: bool) {
-        if let Ok(v) = serde_json::to_value(value) {
-            self.values.push((field.name(), v));
-        }
+        let v = serde_json::Value::from(value);
+        self.values.push((field.name(), v));
     }
 
     fn record_str(&mut self, field: &Field, value: &str) {
-        if let Ok(v) = serde_json::to_value(value) {
-            self.values.push((field.name(), v));
-        }
+        let v = serde_json::Value::from(value);
+        self.values.push((field.name(), v));
     }
 
     fn record_bytes(&mut self, field: &Field, value: &[u8]) {
         let base64_str = base64::engine::general_purpose::STANDARD_NO_PAD.encode(value);
-        if let Ok(v) = serde_json::to_value(base64_str) {
-            self.values.push((field.name(), v));
-        }
+        let v = serde_json::Value::from(base64_str);
+        self.values.push((field.name(), v));
     }
 
     fn record_error(&mut self, field: &Field, value: &(dyn std::error::Error + 'static)) {
-        if let Ok(v) = serde_json::to_value(format!("{value:?}")) {
-            self.values.push((field.name(), v));
+        let v = serde_json::Value::from(format!("{value:?}"));
+        self.values.push((field.name(), v));
+    }
+}
+
+struct JsonSerializeVisitor<S: SerializeMap> {
+    serializer: S,
+    result: Result<(), S::Error>,
+}
+
+impl<S: SerializeMap> tracing::field::Visit for JsonSerializeVisitor<S> {
+    fn record_debug(&mut self, field: &Field, value: &dyn core::fmt::Debug) {
+        if self.result.is_err() {
+            return;
         }
+        let v = format!("{value:?}");
+        self.result = self.serializer.serialize_entry(field.name(), &v)
+    }
+
+    fn record_f64(&mut self, field: &Field, value: f64) {
+        if self.result.is_err() {
+            return;
+        }
+        self.result = self.serializer.serialize_entry(field.name(), &value)
+    }
+
+    fn record_i64(&mut self, field: &Field, value: i64) {
+        if self.result.is_err() {
+            return;
+        }
+        self.result = self.serializer.serialize_entry(field.name(), &value)
+    }
+
+    fn record_u64(&mut self, field: &Field, value: u64) {
+        if self.result.is_err() {
+            return;
+        }
+        self.result = self.serializer.serialize_entry(field.name(), &value)
+    }
+
+    fn record_i128(&mut self, field: &Field, value: i128) {
+        if self.result.is_err() {
+            return;
+        }
+        self.result = self.serializer.serialize_entry(field.name(), &value.to_string())
+    }
+
+    fn record_u128(&mut self, field: &Field, value: u128) {
+        if self.result.is_err() {
+            return;
+        }
+        self.result = self.serializer.serialize_entry(field.name(), &value.to_string())
+    }
+
+    fn record_bool(&mut self, field: &Field, value: bool) {
+        if self.result.is_err() {
+            return;
+        }
+        self.result = self.serializer.serialize_entry(field.name(), &value)
+    }
+
+    fn record_str(&mut self, field: &Field, value: &str) {
+        if self.result.is_err() {
+            return;
+        }
+        self.result = self.serializer.serialize_entry(field.name(), &value)
+    }
+
+    fn record_bytes(&mut self, field: &Field, value: &[u8]) {
+        if self.result.is_err() {
+            return;
+        }
+        let base64_str = base64::engine::general_purpose::STANDARD_NO_PAD.encode(value);
+        self.result = self.serializer.serialize_entry(field.name(), &base64_str)
+    }
+
+    fn record_error(&mut self, field: &Field, value: &(dyn std::error::Error + 'static)) {
+        if self.result.is_err() {
+            return;
+        }
+        let v = format!("{value:?}");
+        self.result = self.serializer.serialize_entry(field.name(), &v)
     }
 }
