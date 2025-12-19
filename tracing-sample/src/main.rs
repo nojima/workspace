@@ -1,7 +1,7 @@
 mod formatter;
 
 use tracing::{Level, event, instrument, span};
-use tracing_subscriber::{Layer, layer::SubscriberExt};
+use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::formatter::{MyJsonFormatter, NopFormatter, RecordFieldLayer};
 
@@ -10,8 +10,7 @@ fn main() {
         .event_format(MyJsonFormatter)
         .fmt_fields(NopFormatter)
         .and_then(RecordFieldLayer);
-    let subscriber = tracing_subscriber::registry().with(layer);
-    tracing::subscriber::set_global_default(subscriber).unwrap();
+    tracing_subscriber::registry().with(layer).init();
 
     event!(Level::INFO, "event 1");
     foo();
@@ -23,6 +22,8 @@ fn main() {
     event!(Level::INFO, "event 3");
 
     event!(Level::DEBUG, "debug event");
+
+    log::info!("Hello from log crate");
 }
 
 #[instrument]
