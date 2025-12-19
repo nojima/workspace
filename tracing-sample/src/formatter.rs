@@ -181,13 +181,13 @@ impl tracing::field::Visit for JsonVisitor {
     }
 
     fn record_i128(&mut self, field: &Field, value: i128) {
-        if let Ok(v) = serde_json::to_value(value) {
+        if let Ok(v) = serde_json::to_value(value.to_string()) {
             self.values.push((field.name(), v));
         }
     }
 
     fn record_u128(&mut self, field: &Field, value: u128) {
-        if let Ok(v) = serde_json::to_value(value) {
+        if let Ok(v) = serde_json::to_value(value.to_string()) {
             self.values.push((field.name(), v));
         }
     }

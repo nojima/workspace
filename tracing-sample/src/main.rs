@@ -1,5 +1,7 @@
 mod formatter;
 
+use core::f64;
+
 use tracing::{Level, event, instrument, span};
 use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -13,12 +15,21 @@ fn main() {
     tracing_subscriber::registry().with(layer).init();
 
     event!(Level::INFO, "event 1");
-    foo();
+    foo(123);
 
-    let _span1 = span!(Level::INFO, "span 1", foo = "FOO", foobar = true).entered();
+    let trace_id = 1111111111111111111111u128;
+
+    let _span1 = span!(
+        Level::INFO,
+        "span 1",
+        foo = "FOO",
+        foobar = true,
+        trace_id = trace_id
+    )
+    .entered();
     event!(Level::INFO, "event 2");
 
-    let _span2 = span!(Level::INFO, "span 2", bar = 42).entered();
+    let _span2 = span!(Level::INFO, "span 2", bar = 42, pi = f64::consts::PI).entered();
     event!(Level::INFO, "event 3");
 
     event!(Level::DEBUG, "debug event");
@@ -27,6 +38,6 @@ fn main() {
 }
 
 #[instrument]
-fn foo() {
+fn foo(_i: u32) {
     event!(Level::INFO, "foo called");
 }
