@@ -18,13 +18,15 @@ fn main() {
     foo(123);
 
     let trace_id = 1111111111111111111111u128;
+    let bytes = b"some bytes";
 
     let _span1 = span!(
         Level::INFO,
         "span 1",
         foo = "FOO",
         foobar = true,
-        trace_id = trace_id
+        trace_id = trace_id,
+        bytes = &bytes[..],
     )
     .entered();
     event!(Level::INFO, "event 2");

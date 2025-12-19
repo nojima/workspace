@@ -1,3 +1,4 @@
+use base64::Engine;
 use chrono::Utc;
 use serde::ser::{SerializeMap, Serializer as _};
 use std::fmt;
@@ -156,8 +157,7 @@ struct JsonVisitor {
 
 impl tracing::field::Visit for JsonVisitor {
     fn record_debug(&mut self, field: &Field, value: &dyn core::fmt::Debug) {
-        let s = format!("{value:?}");
-        if let Ok(v) = serde_json::to_value(s) {
+        if let Ok(v) = serde_json::to_value(format!("{value:?}")) {
             self.values.push((field.name(), v));
         }
     }
@@ -205,13 +205,14 @@ impl tracing::field::Visit for JsonVisitor {
     }
 
     fn record_bytes(&mut self, field: &Field, value: &[u8]) {
-        if let Ok(v) = serde_json::to_value(value) {
+        let base64_str = base64::engine::general_purpose::STANDARD_NO_PAD.encode(value);
+        if let Ok(v) = serde_json::to_value(base64_str) {
             self.values.push((field.name(), v));
         }
     }
 
     fn record_error(&mut self, field: &Field, value: &(dyn std::error::Error + 'static)) {
-        if let Ok(v) = serde_json::to_value(value.to_string()) {
+        if let Ok(v) = serde_json::to_value(format!("{value:?}")) {
             self.values.push((field.name(), v));
         }
     }
